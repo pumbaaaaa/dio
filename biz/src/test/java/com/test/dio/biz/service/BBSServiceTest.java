@@ -1,7 +1,6 @@
 package com.test.dio.biz.service;
 
 import com.test.dio.biz.config.BizConfig;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +20,7 @@ public class BBSServiceTest {
 
     @Test
 //    @Ignore
-    public void test() {
-        try {
-            bbsService.test();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void test() throws IOException {
+        bbsService.maelstrom();
     }
 }

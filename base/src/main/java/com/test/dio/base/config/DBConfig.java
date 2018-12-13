@@ -23,7 +23,7 @@ import javax.sql.DataSource;
 @Configuration
 @MapperScan(basePackages = "com.test.dio.**.mapper", annotationClass = Mapper.class)
 @EnableTransactionManagement
-@PropertySource("classpath:datasource-${spring.profiles.active}.properties")
+@PropertySource(value = "classpath:datasource-${spring.profiles.active}.properties", ignoreResourceNotFound = true)
 public class DBConfig {
 
     @Autowired
