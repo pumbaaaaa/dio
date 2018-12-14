@@ -1,18 +1,22 @@
 package com.test.dio.biz.service;
 
-import io.lettuce.core.api.sync.RedisCommands;
+import com.test.dio.biz.entity.Post;
+import com.test.dio.biz.util.CommonUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class BBSService {
@@ -57,30 +61,49 @@ public class BBSService {
         put("Cache-Control", "max-age=0");
     }};
 
-    @Resource
-    private RedisCommands<String, String> redisCommands;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     public void maelstrom() throws IOException {
 
-        Document maelstrom = getDocument(URL);
-        Elements tdElements = maelstrom.select("[class=c2]");
-        for (Element td : tdElements) {
-            String href = td.select("a[href]").attr("abs:href");
-            String topicId = href.substring(href.lastIndexOf("=") + 1);
-            if (!redisCommands.hexists(topicId, href)) {
-                redisCommands.hset(topicId, href, null);
-            } else {
-                Document post = getDocument(href);
-                String title = post.getElementById("postsubject0").text();
-                Elements cElements = post.select("span[id~=postcontent[0-9]*]");
-                Elements rElements = post.select("span[id~=postdate[0-9]*]");
-
-            }
+        Document maelstromDoc = getDocument(URL);
+        Elements tbodyElements = maelstromDoc.select("tbody");
+        for (Element tbody : tbodyElements) {
+            String replies = tbody.select("[class=c1]").select("a[href]").text();
+            String href = tbody.select("[class=c2]").select("a[href]").attr("abs:href");
+            String title = tbody.select("[class=c2]").select("a[href]").text();
+            String topicId = CommonUtil.subEqualSign(href);
+            
         }
 
+        Elements c2Elements = maelstromDoc.select("[class=c2]");
+        for (Element td : c2Elements) {
+            String href = td.select("a[href]").attr("abs:href");
+            String topicId = CommonUtil.subEqualSign(href);
 
 
-        String nextPage = maelstrom.select("[class=pager_spacer]").attr("abs:href");
+            Document postDoc = getDocument(href);
+            Elements floorElements = postDoc.select("[class=forumbox postbox]");
+            AtomicLong floor = new AtomicLong();
+
+            floorElements.forEach(f -> {
+                String uHref = f.getElementById("postInfo" + floor).select("a[href]").attr("href");
+                String userId = CommonUtil.subEqualSign(uHref);
+                String replyTime = f.getElementById("postdate" + floor).text();
+                String content = f.getElementById("postcontent" + floor).text();
+                Post post = Post.builder()
+                        .topicId(topicId)
+//                        .title(title)
+                        .floor(floor.longValue())
+                        .userId(userId)
+                        .content(content)
+                        .replyTime(replyTime)
+                        .build();
+            });
+
+        }
+
+        String nextPage = maelstromDoc.select("[class=pager_spacer]").attr("abs:href");
         int page = Integer.parseInt(nextPage.substring(nextPage.lastIndexOf("=") + 1));
     }
 
@@ -92,5 +115,11 @@ public class BBSService {
                 .userAgent(USER_AGENT)
                 .timeout(TIME_OUT)
                 .get();
+    }
+
+    public static void main(String[] args) {
+        String url = "nuke.php?func=ucp&amp;uid=623521";
+        String substring = url.substring(url.lastIndexOf("=") + 1);
+        System.out.println(substring);
     }
 }

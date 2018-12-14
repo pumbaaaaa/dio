@@ -1,15 +1,16 @@
 package com.test.dio.biz.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
-import java.util.Date;
-
+@Builder
 @Data
 public class Post {
 
+    private String topicId;
     private String userId;
     private String title;
     private String content;
     private Long floor;
-    private Date replyTime;
+    private String replyTime;
 }
