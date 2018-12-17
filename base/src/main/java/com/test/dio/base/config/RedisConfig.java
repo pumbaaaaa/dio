@@ -28,18 +28,20 @@ public class RedisConfig {
     public LettuceConnectionFactory redisConnectionFactory() {
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .commandTimeout(Duration.ofSeconds(TIME_OUT)).build();
+
         RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration();
         serverConfig.setHostName(Objects.requireNonNull(env.getProperty("redis.host")));
         serverConfig.setPort(env.getProperty("redis.port", Integer.class));
         serverConfig.setPassword(env.getProperty("redis.auth"));
+
         return new LettuceConnectionFactory(serverConfig, clientConfig);
     }
 
     @Bean
     @Scope("singleton")
-    public RedisTemplate<String, Object> redisTemplate() {
+    public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(factory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());

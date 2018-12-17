@@ -9,14 +9,16 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.test.dio.biz.Constant.MAELSTROM;
 
 @Service
 public class BBSService {
@@ -62,7 +64,7 @@ public class BBSService {
     }};
 
     @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     public void maelstrom() throws IOException {
 
@@ -73,7 +75,14 @@ public class BBSService {
             String href = tbody.select("[class=c2]").select("a[href]").attr("abs:href");
             String title = tbody.select("[class=c2]").select("a[href]").text();
             String topicId = CommonUtil.subEqualSign(href);
-            
+
+            HashOperations<String, Object, Object> opsForHash = redisTemplate.opsForHash();
+            if (opsForHash.hasKey(MAELSTROM, href)) {
+
+            } else {
+                opsForHash.put(MAELSTROM, href, replies);
+            }
+
         }
 
         Elements c2Elements = maelstromDoc.select("[class=c2]");
