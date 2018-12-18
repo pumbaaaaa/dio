@@ -7,10 +7,7 @@ import lombok.Data;
 @Data
 public class Post {
 
-    private String topicId;
-    private String userId;
+    private Long topicId;
     private String title;
-    private String content;
-    private Long floor;
-    private String replyTime;
+    private String relies;
 }

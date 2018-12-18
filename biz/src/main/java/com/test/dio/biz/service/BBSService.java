@@ -1,7 +1,9 @@
 package com.test.dio.biz.service;
 
+import com.test.dio.biz.entity.Floor;
 import com.test.dio.biz.entity.Post;
 import com.test.dio.biz.util.CommonUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,9 +16,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.test.dio.biz.Constant.MAELSTROM;
 
@@ -27,29 +30,28 @@ public class BBSService {
 
     private static final String URL = "https://bbs.nga.cn/thread.php?fid=-7";
 
-    private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36";
-
-    private static final int TIME_OUT = 3000;
-
     private static final Map<String, String> COOKIE = new HashMap<String, String>() {{
         put("taihe", "b7f5af5859e5a53c87ce00f4db969733");
         put("UM_distinctid", "1679701fe82110-0edf03b04b7dd9-113c6654-100200-1679701fe83212");
         put("bbsmisccookies", "%7B%22insad_refreshid%22%3A%7B0%3A%22/154399253466302%22%2C1%3A1545031546%7D%2C%22uisetting%22%3A%7B0%3A64%2C1%3A1552209627%7D%7D");
-        put("Hm_lvt_5adc78329e14807f050ce131992ae69b", "1544426750,1544492195");
-        put("taihe_session", "bd60cb233fdb77255f6b2d69056fea1c");
-        put("CNZZDATA30043604", "cnzz_eid%3D651755901-1544422500-%26ntime%3D1544491034");
-        put("CNZZDATA30039253", "cnzz_eid%3D948383559-1544422023-%26ntime%3D1544486929");
+        put("Hm_lvt_5adc78329e14807f050ce131992ae69b", "1544426750,1544492195,1544776707,1545118511");
+        put("taihe_session", "b5388c455022e815e1cb047e828d4bff");
+        put("CNZZDATA1256638828", "1679748355-1544510337-https%253A%252F%252Fbbs.nga.cn%252F%7C1544510337");
+        put("CNZZDATA1256638919", "1038003479-1544512733-%7C1544512733");
+        put("CNZZDATA1256638851", "1618748851-1544771688-https%253A%252F%252Fbbs.nga.cn%252F%7C1544771688");
+        put("CNZZDATA30039253", "cnzz_eid%3D948383559-1544422023-%26ntime%3D1545116700");
+        put("CNZZDATA30043604", "cnzz_eid%3D651755901-1544422500-%26ntime%3D1545116056");
+        put("CNZZDATA1256638820", "1330156108-1544433512-https%253A%252F%252Fbbs.nga.cn%252F%7C1545116148");
         put("ngaPassportOid", "fae26b9a206759a99255e05549baf771");
         put("ngacn0comUserInfo", "Excursion%09Excursion%0939%0939%09%0910%090%094%090%090%09");
-        put("ngacn0comUserInfoCheck", "e7523affa798d1368cb748291b4b83ad");
-        put("ngacn0comInfoCheckTime", "1544492217");
+        put("ngacn0comUserInfoCheck", "9028f564e63a4d19a4229131b265ae08");
+        put("ngacn0comInfoCheckTime", "1545118499");
         put("ngaPassportUid", "10315395");
         put("ngaPassportUrlencodedUname", "Excursion");
         put("ngaPassportCid", "b64bb2796ad892d1dbc0c2c1ac4035a4");
-        put("lastvisit", "1544492226");
+        put("lastvisit", "1545118574");
         put("lastpath", "/thread.php?fid=-7");
-        put("Hm_lpvt_5adc78329e14807f050ce131992ae69b", "1544492229");
-        put("CNZZDATA1256638820", "1330156108-1544433512-https%253A%252F%252Fbbs.nga.cn%252F%7C1544487539");
+        put("Hm_lpvt_5adc78329e14807f050ce131992ae69b", "1545118578");
     }};
 
     private static final Map<String, String> HEADER = new HashMap<String, String>() {{
@@ -61,6 +63,7 @@ public class BBSService {
         put("Referer", "https://bbs.nga.cn/thread.php?fid=-7");
         put("Upgrade-Insecure-Requests", "1");
         put("Cache-Control", "max-age=0");
+        put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36");
     }};
 
     @Autowired
@@ -77,43 +80,50 @@ public class BBSService {
             String topicId = CommonUtil.subEqualSign(href);
 
             HashOperations<String, Object, Object> opsForHash = redisTemplate.opsForHash();
-            if (opsForHash.hasKey(MAELSTROM, href)) {
+            if (!opsForHash.hasKey(MAELSTROM, href)) {
+                Post post = Post.builder()
+                        .topicId(Long.valueOf(topicId))
+                        .title(title)
+                        .relies(replies)
+                        .build();
+
+                List<Floor> postList = new ArrayList<>();
+                getAllFloor(href, postList, topicId);
+                opsForHash.put(MAELSTROM, href, replies);
 
             } else {
-                opsForHash.put(MAELSTROM, href, replies);
+
+
             }
-
-        }
-
-        Elements c2Elements = maelstromDoc.select("[class=c2]");
-        for (Element td : c2Elements) {
-            String href = td.select("a[href]").attr("abs:href");
-            String topicId = CommonUtil.subEqualSign(href);
-
-
-            Document postDoc = getDocument(href);
-            Elements floorElements = postDoc.select("[class=forumbox postbox]");
-            AtomicLong floor = new AtomicLong();
-
-            floorElements.forEach(f -> {
-                String uHref = f.getElementById("postInfo" + floor).select("a[href]").attr("href");
-                String userId = CommonUtil.subEqualSign(uHref);
-                String replyTime = f.getElementById("postdate" + floor).text();
-                String content = f.getElementById("postcontent" + floor).text();
-                Post post = Post.builder()
-                        .topicId(topicId)
-//                        .title(title)
-                        .floor(floor.longValue())
-                        .userId(userId)
-                        .content(content)
-                        .replyTime(replyTime)
-                        .build();
-            });
-
         }
 
         String nextPage = maelstromDoc.select("[class=pager_spacer]").attr("abs:href");
         int page = Integer.parseInt(nextPage.substring(nextPage.lastIndexOf("=") + 1));
+    }
+
+    private void getAllFloor(String postUrl, List<Floor> list, String topicId) throws IOException {
+        Document postDoc = getDocument(postUrl);
+        Elements floorElements = postDoc.select("[class=forumbox postbox]");
+        for (Element f : floorElements) {
+            Elements dateElements = f.select("[id~=postdate\\d*]");
+            String floor = dateElements.attr("id").substring(7);
+            String replyTime = dateElements.text();
+            String userHref = f.select("[id~=posterinfo\\d*]").select("a[href]").attr("abs:href");
+            String userId = CommonUtil.subEqualSign(userHref);
+            String content = f.select("[id~=postcontent\\d*]").text();
+            Floor post = Floor.builder()
+                    .floor(floor)
+                    .replyTime(replyTime)
+                    .userId(userId)
+                    .content(content)
+                    .topicId(Long.valueOf(topicId))
+                    .build();
+            list.add(post);
+        }
+        String nextPage = postDoc.select("[title=下一页]").select("a[href]").attr("abs:href");
+        if (StringUtils.isNotEmpty(nextPage)) {
+            getAllFloor(nextPage, list, topicId);
+        }
     }
 
     private Document getDocument(String url) throws IOException {
@@ -121,14 +131,6 @@ public class BBSService {
                 .connect(url)
                 .headers(HEADER)
                 .cookies(COOKIE)
-                .userAgent(USER_AGENT)
-                .timeout(TIME_OUT)
                 .get();
-    }
-
-    public static void main(String[] args) {
-        String url = "nuke.php?func=ucp&amp;uid=623521";
-        String substring = url.substring(url.lastIndexOf("=") + 1);
-        System.out.println(substring);
     }
 }
