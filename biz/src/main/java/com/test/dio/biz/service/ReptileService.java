@@ -82,6 +82,12 @@ public class ReptileService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    public void testHtml(String url) throws IOException {
+        Document document = getDocument(url);
+
+        System.out.println(document);
+    }
+
     public void maelstrom() {
         List<Post> posts = new ArrayList<>();
         try {
@@ -137,7 +143,6 @@ public class ReptileService {
     }
 
     private void getFloor(String url, List<Floor> list, Long topicId, Long replies) throws IOException {
-        //todo #anony_b474f8ae094bfa3c76c5d7486d9c5e7d
         if (null != replies) {
             url = CommonUtil.getRepliesPage(url, replies);
         }
@@ -145,13 +150,13 @@ public class ReptileService {
         String nextPage = postDoc.select("[title=下一页]").select("a[href]").attr("abs:href");
         Elements floorElements = postDoc.select("[class=forumbox postbox]");
         for (Element f : floorElements) {
-            Elements dateElements = f.select("[id~=postdate\\d*]");
+            Elements dateElements = f.select("[id~=postdate\\d+]");
             Long floor = Long.valueOf(dateElements.attr("id").substring(8));
             if (null == replies || floor > replies) {
                 Date replyTime = DateUtil.parseStrWithPattern(dateElements.text(), Constant.YYYY_MM_DD_HH_MM);
-                String userHref = f.select("[id~=posterinfo\\d*]").select("a[href]").attr("abs:href");
+                String userHref = f.select("[id~=posterinfo\\d+]").select("a[href]").attr("abs:href");
                 Long userId = Long.valueOf(CommonUtil.subEqualSign(userHref));
-                String content = f.select("[id~=postcontent\\d*]").text();
+                String content = f.select("[id~=postcontent\\d+]").text();
                 String hash = DigestUtils.md5Hex(String.valueOf(topicId + floor + userId));
                 Floor post = Floor.builder()
                         .floor(floor)

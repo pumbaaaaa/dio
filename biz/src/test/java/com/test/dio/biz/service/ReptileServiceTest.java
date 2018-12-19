@@ -29,8 +29,13 @@ public class ReptileServiceTest {
 
     @Test
 //    @Ignore
-    public void test() throws IOException {
+    public void test() {
         reptileService.maelstrom();
+    }
+
+    @Test
+    public void testHtml() throws IOException {
+        reptileService.testHtml("https://bbs.nga.cn/read.php?tid=15942466&_ff=-7");
     }
 
     @Test
