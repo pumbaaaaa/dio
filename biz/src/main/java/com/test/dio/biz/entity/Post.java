@@ -9,5 +9,6 @@ public class Post {
 
     private Long topicId;
     private String title;
-    private String relies;
+    private Long relies;
+    private Long userId;
 }
