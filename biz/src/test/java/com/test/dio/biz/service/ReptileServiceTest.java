@@ -1,6 +1,7 @@
 package com.test.dio.biz.service;
 
 import com.test.dio.biz.config.BizConfig;
+import com.test.dio.biz.util.CommonUtil;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.junit.Ignore;
@@ -15,6 +16,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = BizConfig.class)
@@ -35,7 +37,8 @@ public class ReptileServiceTest {
 
     @Test
     public void testHtml() throws IOException {
-        reptileService.testHtml("https://bbs.nga.cn/read.php?tid=15942466&_ff=-7");
+        List<String> repliesPage = CommonUtil.getRepliesUrl("https://bbs.nga.cn/read.php?tid=15942466&_ff=-7", 118345L, 100000L);
+        System.out.println(repliesPage);
     }
 
     @Test

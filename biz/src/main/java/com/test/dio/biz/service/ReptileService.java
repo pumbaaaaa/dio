@@ -27,6 +27,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.test.dio.biz.Constant.MAELSTROM;
 
@@ -74,6 +77,12 @@ public class ReptileService {
     }};
 
     private static final int PAGE_LIMIT = 5;
+
+    private final Executor executor = Executors.newFixedThreadPool(100, r -> {
+        Thread t = new Thread();
+        t.setDaemon(true);
+        return t;
+    });
 
     @Autowired
     @Qualifier("primarySqlSessionFactory")
@@ -142,23 +151,29 @@ public class ReptileService {
         }
     }
 
+    private void getFloor(String url, Long topicId, Long replies, Long lastReplies) {
+        List<String> repliesUrl = CommonUtil.getRepliesUrl(url, replies, lastReplies);
+        // TODO
+//        CompletableFuture.supplyAsync(, executor);
+    }
+
     private void getFloor(String url, List<Floor> list, Long topicId, Long replies) throws IOException {
         if (null != replies) {
-            url = CommonUtil.getRepliesPage(url, replies);
+            url = CommonUtil.getLastRepliesUrl(url, replies);
         }
         Document postDoc = getDocument(url);
         String nextPage = postDoc.select("[title=下一页]").select("a[href]").attr("abs:href");
         Elements floorElements = postDoc.select("[class=forumbox postbox]");
-        for (Element f : floorElements) {
-            Elements dateElements = f.select("[id~=postdate\\d+]");
+        for (Element e : floorElements) {
+            Elements dateElements = e.select("[id~=postdate\\d+]");
             Long floor = Long.valueOf(dateElements.attr("id").substring(8));
             if (null == replies || floor > replies) {
                 Date replyTime = DateUtil.parseStrWithPattern(dateElements.text(), Constant.YYYY_MM_DD_HH_MM);
-                String userHref = f.select("[id~=posterinfo\\d+]").select("a[href]").attr("abs:href");
+                String userHref = e.select("[id~=posterinfo\\d+]").select("a[href]").attr("abs:href");
                 Long userId = Long.valueOf(CommonUtil.subEqualSign(userHref));
-                String content = f.select("[id~=postcontent\\d+]").text();
+                String content = e.select("[id~=postcontent\\d+]").text();
                 String hash = DigestUtils.md5Hex(String.valueOf(topicId + floor + userId));
-                Floor post = Floor.builder()
+                Floor f = Floor.builder()
                         .floor(floor)
                         .replyTime(replyTime)
                         .userId(userId)
@@ -166,7 +181,7 @@ public class ReptileService {
                         .hash(hash)
                         .topicId(topicId)
                         .build();
-                list.add(post);
+                list.add(f);
             }
         }
         if (StringUtils.isNotEmpty(nextPage)) {
