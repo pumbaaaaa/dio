@@ -9,8 +9,9 @@ import java.util.Date;
 @Builder
 public class Floor {
 
+    private Long id;
     private Long topicId;
-    private Long userId;
+    private String userId;
     private Long floor;
     private String content;
     private String hash;

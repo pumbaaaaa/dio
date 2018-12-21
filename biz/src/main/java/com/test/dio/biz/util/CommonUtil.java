@@ -7,11 +7,9 @@ public class CommonUtil {
 
     public static List<String> getRepliesUrl(String url, Long replies, Long lastReplies) {
         List<String> urlList = new ArrayList<>();
-        long start = 2;
+        long start = 1;
         if (null != lastReplies) {
             start = lastReplies / 20 + 1;
-        } else {
-            urlList.add(url);
         }
         for (long i = start; i <= replies / 20 + 1; i++) {
             urlList.add(url + "&page=" + i);
@@ -19,12 +17,12 @@ public class CommonUtil {
         return urlList;
     }
 
-    public static String getLastRepliesUrl(String url, Long replies) {
-        long page = replies / 20 + 1;
-        if (page != 1) {
-            return url + "&page=" + page;
+    public static List<String> getListUrl(String url, int limit) {
+        List<String> urlList = new ArrayList<>();
+        for (int i = 1; i <= limit; i++) {
+            urlList.add(url + "&page=" + i);
         }
-        return url;
+        return urlList;
     }
 
     public static String subEqualSign(String str) {
