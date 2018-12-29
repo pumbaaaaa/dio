@@ -10,10 +10,12 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Executors;
 
 @Configuration
 @PropertySource(value = "classpath:datasource-${spring.profiles.active}.properties", ignoreResourceNotFound = true)
@@ -39,13 +41,27 @@ public class RedisConfig {
 
     @Bean
     @Scope("singleton")
-    public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory factory) {
+    public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(factory);
+        template.setConnectionFactory(redisConnectionFactory());
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setHashValueSerializer(new StringRedisSerializer());
         return template;
+    }
+
+//    @Bean
+//    public MessageListenerAdapter messageListenerAdapter() {
+//        new MessageListenerAdapter(new MessageReceiver(), "receiveMessage");
+//    }
+
+    @Bean
+    public RedisMessageListenerContainer redisContainer() {
+        final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory());
+//        container.addMessageListener(messageListenerAdapter(), new PatternTopic(env.getProperty("redis.topic")));
+        container.setTaskExecutor(Executors.newFixedThreadPool(4));
+        return container;
     }
 }

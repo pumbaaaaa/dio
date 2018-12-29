@@ -5,8 +5,8 @@ import lombok.Data;
 
 import java.util.Date;
 
-@Builder
 @Data
+@Builder
 public class Post {
 
     private Long id;

@@ -52,6 +52,12 @@
             <version>1.3.2</version>
         </dependency>
 
+        <!-- kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- tools -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -65,17 +71,20 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+
         <!-- joda-time -->
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
         </dependency>
+
         <!-- okHttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>3.11.0</version>
         </dependency>
+
         <!-- jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>

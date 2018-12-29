@@ -41,8 +41,6 @@ public class ReptileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReptileService.class);
 
-    private static final String URL = "https://bbs.nga.cn/thread.php?fid=-7";
-
     private static final Map<String, String> COOKIE = new HashMap<String, String>() {{
         put("taihe", "b7f5af5859e5a53c87ce00f4db969733");
         put("ngaPassportOid", "fae26b9a206759a99255e05549baf771");
@@ -60,12 +58,7 @@ public class ReptileService {
         put("taihe_session", "dfffebfffee98f9fe5d32619cf1cde13");
         put("bbsmisccookies", "%7B%22uisetting%22%3A%7B0%3A64%2C1%3A1552209627%7D%2C%22insad_refreshid%22%3A%7B0%3A%22/154531817574267%22%2C1%3A1545968461%7D%2C%22pv_count_for_insad%22%3A%7B0%3A-37%2C1%3A1545411602%7D%2C%22insad_views%22%3A%7B0%3A1%2C1%3A1545411602%7D%7D");
         put("UM_distinctid", "167abe43f8a83b-0a24c6d5271b17-113c6654-100200-167abe43f8b40d");
-        put("CNZZDATA1256638828", "1679748355-1544510337-https%253A%252F%252Fbbs.nga.cn%252F%7C1544510337");
-        put("CNZZDATA1256638919", "1038003479-1544512733-%7C1544512733");
-        put("CNZZDATA1256638851", "1618748851-1544771688-https%253A%252F%252Fbbs.nga.cn%252F%7C1544771688");
-        put("CNZZDATA1256638924", "613926767-1545126424-https%253A%252F%252Fbbs.nga.cn%252F%7C1545126424");
         put("CNZZDATA30039253", "cnzz_eid%3D948383559-1544422023-%26ntime%3D1545379062");
-        put("CNZZDATA1256638820", "1330156108-1544433512-https%253A%252F%252Fbbs.nga.cn%252F%7C1545380049");
         put("CNZZDATA30043604", "cnzz_eid%3D651755901-1544422500-%26ntime%3D1545380554");
     }};
 
@@ -81,7 +74,7 @@ public class ReptileService {
         put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36");
     }};
 
-    private final Executor executor = Executors.newFixedThreadPool(50,
+    private final Executor executor = Executors.newFixedThreadPool(9,
             r -> {
                 Thread t = new Thread(r);
                 t.setDaemon(true);
@@ -99,7 +92,7 @@ public class ReptileService {
     private ErrLogMapper errLogMapper;
 
     public void maelstrom() {
-        List<String> listUrl = CommonUtil.getListUrl(URL, 10);
+        List<String> listUrl = CommonUtil.getListUrl(Constant.MAELSTROM_URL, 10);
         List<Post> posts = listUrl.stream()
                 .flatMap(e -> getPost(e).stream())
                 .collect(Collectors.toList());
