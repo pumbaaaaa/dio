@@ -50,18 +50,4 @@ public class RedisConfig {
         template.setHashValueSerializer(new StringRedisSerializer());
         return template;
     }
-
-//    @Bean
-//    public MessageListenerAdapter messageListenerAdapter() {
-//        new MessageListenerAdapter(new MessageReceiver(), "receiveMessage");
-//    }
-
-    @Bean
-    public RedisMessageListenerContainer redisContainer() {
-        final RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(redisConnectionFactory());
-//        container.addMessageListener(messageListenerAdapter(), new PatternTopic(env.getProperty("redis.topic")));
-        container.setTaskExecutor(Executors.newFixedThreadPool(4));
-        return container;
-    }
 }

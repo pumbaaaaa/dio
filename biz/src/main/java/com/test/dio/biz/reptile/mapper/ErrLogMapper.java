@@ -1,6 +1,6 @@
-package com.test.dio.biz.mapper;
+package com.test.dio.biz.reptile.mapper;
 
-import com.test.dio.biz.entity.ErrLog;
+import com.test.dio.biz.reptile.entity.ErrLog;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;

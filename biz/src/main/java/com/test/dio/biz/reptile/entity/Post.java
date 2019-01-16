@@ -1,4 +1,4 @@
-package com.test.dio.biz.entity;
+package com.test.dio.biz.reptile.entity;
 
 import lombok.Builder;
 import lombok.Data;

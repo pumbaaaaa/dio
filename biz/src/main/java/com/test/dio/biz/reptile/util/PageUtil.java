@@ -1,9 +1,9 @@
-package com.test.dio.biz.util;
+package com.test.dio.biz.reptile.util;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CommonUtil {
+public class PageUtil {
 
     public static List<String> getRepliesUrl(String url, Long replies, Long lastReplies) {
         List<String> urlList = new ArrayList<>();

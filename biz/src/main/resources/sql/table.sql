@@ -15,9 +15,11 @@ CREATE TABLE IF NOT EXISTS t_floor (
   topic_id numeric(12),
   user_id varchar(50),
   floor numeric(12),
-  reply_time timestamp(6),
   content text,
+  url varchar(200),
+  annex varchar(200),
   hash varchar(50),
+  reply_time timestamp(6) not null,
   create_time timestamp(6) default now(),
   constraint u_t_floor_hash unique (hash)
   );

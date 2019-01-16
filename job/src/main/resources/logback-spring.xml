@@ -2,7 +2,7 @@
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
 
     <contextName>dio</contextName>
-    <property name="dev.log.path" value="/Users/pumbaa/Developer/logs/dio_web"/>
+    <property name="dev.log.path" value="/Users/pumbaa/Developer/logs/dio_job"/>
 
     <springProfile name="dev">
         <appender name="console" class="ch.qos.logback.core.ConsoleAppender">

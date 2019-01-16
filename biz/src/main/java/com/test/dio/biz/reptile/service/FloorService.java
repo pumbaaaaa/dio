@@ -1,7 +1,7 @@
-package com.test.dio.biz.service;
+package com.test.dio.biz.reptile.service;
 
-import com.test.dio.biz.entity.Floor;
-import com.test.dio.biz.mapper.FloorMapper;
+import com.test.dio.biz.reptile.entity.Floor;
+import com.test.dio.biz.reptile.mapper.FloorMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
