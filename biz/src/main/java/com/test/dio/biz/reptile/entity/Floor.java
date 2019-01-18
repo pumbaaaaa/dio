@@ -15,7 +15,6 @@ public class Floor {
     private Long floor;
     private String content;
     private String url;
-    private String annex;
     private String hash;
     private Date replyTime;
 }

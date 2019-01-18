@@ -14,7 +14,7 @@ public class FloorService {
     private FloorMapper floorMapper;
 
     public void getPostAllFloor() {
-        List<Floor> floors = floorMapper.queryFloorFromPost(15929069L);
+        List<Floor> floors = floorMapper.queryFloorByTopicId(15929069L);
         floors.forEach(f -> {
             String content = f.getContent();
             System.out.println(content);

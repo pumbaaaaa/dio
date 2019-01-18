@@ -16,12 +16,10 @@ CREATE TABLE IF NOT EXISTS t_floor (
   user_id varchar(50),
   floor numeric(12),
   content text,
-  url varchar(200),
-  annex varchar(200),
-  hash varchar(50),
+  url text,
+  hash varchar(32),
   reply_time timestamp(6) not null,
-  create_time timestamp(6) default now(),
-  constraint u_t_floor_hash unique (hash)
+  create_time timestamp(6) default now()
   );
 
 

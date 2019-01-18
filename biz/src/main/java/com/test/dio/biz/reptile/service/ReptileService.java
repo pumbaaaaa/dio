@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -43,6 +44,18 @@ import static com.test.dio.biz.consts.Constant.MAELSTROM;
 public class ReptileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReptileService.class);
+
+    private static final Map<String, String> HEADER = new HashMap<String, String>() {{
+        put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+        put("Accept-Encoding", "gzip, deflate, br");
+        put("Accept-Language", "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7");
+        put("Connection", "keep-alive");
+        put("Host", "bbs.nga.cn");
+        put("Referer", "https://bbs.nga.cn/thread.php?fid=-7");
+        put("Upgrade-Insecure-Requests", "1");
+        put("Cache-Control", "max-age=0");
+        put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36");
+    }};
 
     private static final Map<String, String> COOKIE = new HashMap<String, String>() {{
         put("taihe", "b7f5af5859e5a53c87ce00f4db969733");
@@ -80,8 +93,9 @@ public class ReptileService {
     @Autowired
     private ErrLogMapper errLogMapper;
 
-    public void maelstrom() {
-        List<String> listUrl = PageUtil.getListUrl(Constant.MAELSTROM_URL, 10);
+    // Sync get post
+    public void reptile(String url, int limit) {
+        List<String> listUrl = PageUtil.getListUrl(url, limit);
         List<Post> posts = listUrl.stream()
                 .flatMap(e -> getPost(e).stream())
                 .collect(Collectors.toList());
@@ -99,6 +113,12 @@ public class ReptileService {
                 String href = body.select("[class=c2]").select("a[href]").attr("abs:href");
                 String title = body.select("[class=c2]").select("a[href]").text();
                 String user = body.select("[class=c3]").select("a[href]").attr("href");
+
+                // Post hide
+                if (StringUtils.isBlank(href)) {
+                    continue;
+                }
+
                 String userId = PageUtil.subEqualSign(user);
                 Long topicId = Long.valueOf(PageUtil.subEqualSign(href));
 
@@ -136,6 +156,7 @@ public class ReptileService {
         return posts;
     }
 
+    // Async get all floor
     private void getFloor(String url, Long topicId, Long replies, Long lastReplies) {
         long queryStart = System.currentTimeMillis();
 
@@ -148,13 +169,16 @@ public class ReptileService {
                 .flatMap(future -> future.join().stream())
                 .collect(Collectors.toList());
 
+        // deduplication
+        List<Floor> deduplicationFloors = deduplicationFloors(allFloor);
         long queryEnd = System.currentTimeMillis();
         LOGGER.info("======>Query floors url: {} done in {} msecs<======", url, queryEnd - queryStart);
-        batchInsertFloors(allFloor);
+        batchInsertFloors(deduplicationFloors);
         long insertEnd = System.currentTimeMillis();
         LOGGER.info("======>Insert floors url: {} rows: {}  done in {} msecs<======", url, allFloor.size(), insertEnd - queryEnd);
     }
 
+    // Get floor & insert
     private List<Floor> getFloorList(String url, Long topicId, Long lastReplies) {
         List<Floor> result = new ArrayList<>();
         try {
@@ -163,25 +187,26 @@ public class ReptileService {
 
             for (Element e : floorElements) {
                 Elements dateElements = e.select("[id~=postdate\\d+]");
+                String date = dateElements.text();
                 Long floor = Long.valueOf(dateElements.attr("id").substring(8));
 
                 if (null == lastReplies || floor > lastReplies) {
-                    Date replyTime = DateUtil.parseStrWithPattern(dateElements.text(), Constant.YYYY_MM_DD_HH_MM);
+                    Date replyTime = DateUtil.parseStrWithPattern(date, Constant.YYYY_MM_DD_HH_MM);
                     String userHref = e.select("[id~=posterinfo\\d+]").select("a[href]").attr("abs:href");
                     String userId = PageUtil.subEqualSign(userHref);
-                    String hash = DigestUtils.md5Hex(topicId + floor + userId);
+                    String hash = DigestUtils.md5Hex(topicId + floor + userId + date);
                     String content = e.select("[id~=postcontent\\d+]").text();
 
                     Floor f = Floor.builder()
                             .floor(floor)
                             .replyTime(replyTime)
                             .userId(userId)
-                            .hash(hash)
                             .topicId(topicId)
+                            .hash(hash)
                             .build();
-                    result.add(f);
 
                     setContentAndUrl(f, content);
+                    result.add(f);
                 }
             }
         } catch (IOException e) {
@@ -195,6 +220,7 @@ public class ReptileService {
         return result;
     }
 
+    // Clean content & get url
     private void setContentAndUrl(Floor floor, String content) {
         String cleanContent = content
                 .replaceAll(Constant.LABEL_REGEX, "")
@@ -202,23 +228,31 @@ public class ReptileService {
         Pattern pattern = Pattern.compile(Constant.URL_REGEX);
         Matcher matcher = pattern.matcher(content);
         List<String> urlList = new ArrayList<>();
-        List<String> annexList = new ArrayList<>();
         while (matcher.find()) {
             String str = matcher.group();
-            if (str.startsWith("\\.\\/")) {
-                annexList.add(str);
+            if (str.startsWith("./")) {
+                urlList.add(Constant.ATTACHMENTS + str.substring(1));
+            } else {
+                urlList.add(str);
             }
-            urlList.add(str);
         }
         floor.setContent(StringUtils.trim(cleanContent));
-        floor.setAnnex(StringUtils.join(annexList, ","));
         floor.setUrl(StringUtils.join(urlList, ","));
+    }
+
+    private List<Floor> deduplicationFloors(List<Floor> allFloor) {
+        SetOperations<String, Object> set = redisTemplate.opsForSet();
+        List<Floor> dFloors = allFloor.stream()
+                .filter(e -> !set.isMember(Constant.DEDUPLICATION, e.getHash()))
+                .collect(Collectors.toList());
+        allFloor.forEach(e -> set.add(Constant.DEDUPLICATION, e.getHash()));
+        return dFloors;
     }
 
     private Document getDocument(String url) throws IOException {
         return Jsoup
                 .connect(url)
-                .headers(Constant.HEADER)
+                .headers(HEADER)
                 .cookies(COOKIE)
                 .get();
     }
