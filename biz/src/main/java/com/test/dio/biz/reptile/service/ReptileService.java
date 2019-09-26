@@ -93,7 +93,7 @@ public class ReptileService {
     @Autowired
     private ErrLogMapper errLogMapper;
 
-    // Sync get post
+    // sync get post
     public void reptile(String url, int limit) {
         List<String> listUrl = PageUtil.getListUrl(url, limit);
         List<Post> posts = listUrl.stream()
@@ -114,7 +114,7 @@ public class ReptileService {
                 String title = body.select("[class=c2]").select("a[href]").text();
                 String user = body.select("[class=c3]").select("a[href]").attr("href");
 
-                // Post hide
+                // post hide
                 if (StringUtils.isBlank(href)) {
                     continue;
                 }
@@ -156,7 +156,7 @@ public class ReptileService {
         return posts;
     }
 
-    // Async get all floor
+    // async get all floor
     private void getFloor(String url, Long topicId, Long replies, Long lastReplies) {
         long queryStart = System.currentTimeMillis();
 
@@ -178,7 +178,7 @@ public class ReptileService {
         LOGGER.info("======>Insert floors url: {} rows: {}  done in {} msecs<======", url, allFloor.size(), insertEnd - queryEnd);
     }
 
-    // Get floor & insert
+    // get floor & insert
     private List<Floor> getFloorList(String url, Long topicId, Long lastReplies) {
         List<Floor> result = new ArrayList<>();
         try {
@@ -220,7 +220,7 @@ public class ReptileService {
         return result;
     }
 
-    // Clean content & get url
+    // clean content & get url
     private void setContentAndUrl(Floor floor, String content) {
         String cleanContent = content
                 .replaceAll(Constant.LABEL_REGEX, "")
