@@ -11,9 +11,9 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/")
-public class HelloCtr {
+public class HelloController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HelloCtr.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HelloController.class);
 
     @GetMapping("/test")
     public String test(HttpServletRequest request) {
