@@ -2,41 +2,31 @@ package com.test.dio.biz.service.impl;
 
 import com.test.dio.biz.domain.ModuKpiParamDTO;
 import com.test.dio.biz.service.ModuConfService;
-import com.test.dio.biz.strategy.ModuConfStrategy;
+import com.test.dio.biz.strategy.ModuConfStrategyFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class ModuConfServiceImpl implements ModuConfService {
 
-    private static final String FORM_VALUE = "formValue";
+
+    @Autowired
+    private ModuConfStrategyFactory factory;
 
     @Override
-    @SuppressWarnings("unchecked")
-    public String saveModuConf(ModuKpiParamDTO param) {
+    public void saveModuConf(ModuKpiParamDTO param) {
 
         // 获取conf
         List<Map<String, Object>> conf = param.getFormConfigData();
 
-        conf.stream()
-                // 查询到包含formValue结构的Map
-                .filter(e -> e.containsKey(FORM_VALUE))
-                //
-                .forEach(e -> {
-                    Object formValue = e.get(FORM_VALUE);
-                    if (formValue instanceof Map) {
-                        ((Map) formValue).put("sqlId", "aaaa");
-                    } else if (formValue instanceof List) {
+        // 根据不同的组件类型数据结构解析生成sql
+        Map<String, String> sqlMap = factory.getStrategy(param.getComponentName()).formValueStructAna(conf);
 
-                    }
+        // 将sql插入kpi_sql_info_a表中
 
-                });
-
-        System.out.println(conf);
-
-        return null;
+        // 将conf序列化为json字段保存到modu_list_a表中
     }
 }

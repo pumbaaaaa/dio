@@ -4,5 +4,5 @@ import com.test.dio.biz.domain.ModuKpiParamDTO;
 
 public interface ModuConfService {
 
-    String saveModuConf(ModuKpiParamDTO param);
+    void saveModuConf(ModuKpiParamDTO param);
 }

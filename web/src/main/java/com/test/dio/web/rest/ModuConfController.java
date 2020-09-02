@@ -19,7 +19,9 @@ public class ModuConfController {
     @ApiOperation("保存组件指标配置")
     public ResponseEntity<String> saveModuConf(@RequestBody ModuKpiParamDTO param) {
 
-        return ResponseEntity.ok(moduConfService.saveModuConf(param));
+        moduConfService.saveModuConf(param);
+
+        return ResponseEntity.ok().build();
     }
 
 }

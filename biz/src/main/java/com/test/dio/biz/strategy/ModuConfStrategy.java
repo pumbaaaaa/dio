@@ -9,10 +9,10 @@ import java.util.Map;
 public interface ModuConfStrategy {
 
     /**
-     * formValue结构解析
+     * formValue结构解析并生成sql返回
      *
      * @param param
      * @return
      */
-    List<Map<String, Object>> formValueStructAna(List<Map<String, Object>> param);
+    Map<String, String> formValueStructAna(List<Map<String, Object>> param);
 }
