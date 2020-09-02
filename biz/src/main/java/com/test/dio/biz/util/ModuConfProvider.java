@@ -1,4 +1,4 @@
-package com.test.dio.biz.dao.provider;
+package com.test.dio.biz.util;
 
 import com.test.dio.biz.util.ScriptSQL;
 import org.springframework.stereotype.Component;

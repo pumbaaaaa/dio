@@ -6,11 +6,6 @@ package com.test.dio.biz.consts;
 public interface ModuConstant {
 
     /**
-     * KEY
-     */
-    String KEY = "key";
-
-    /**
      * VALUE
      */
     String VALUE = "value";
@@ -25,4 +20,18 @@ public interface ModuConstant {
      */
     String DIMEN = "dimen";
 
+    /**
+     * 指标别名
+     */
+    String ALIAS_NAME = "aliasName";
+
+    /**
+     * 指标ID
+     */
+    String KPI_ID = "kpiId";
+
+    /**
+     * 指标SQL
+     */
+    String KPI_SQL = "kpiSql";
 }

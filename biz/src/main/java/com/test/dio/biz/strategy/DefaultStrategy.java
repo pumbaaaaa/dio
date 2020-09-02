@@ -1,11 +1,16 @@
 package com.test.dio.biz.strategy;
 
 import com.test.dio.biz.consts.ModuConstant;
+import com.test.dio.biz.domain.KpiInfoDO;
 import com.test.dio.biz.util.CommonUtils;
+import com.test.dio.biz.util.ScriptSQL;
+import com.test.dio.biz.util.SelectExpression;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+
 
 /**
  * 默认组件
@@ -15,6 +20,7 @@ import java.util.*;
 public class DefaultStrategy implements ModuConfStrategy {
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<String, String> formValueStructAna(List<Map<String, Object>> param) {
 
         // 初始化返回结果，K为kpiId，V为组装sql
@@ -28,12 +34,70 @@ public class DefaultStrategy implements ModuConfStrategy {
                     // 获取指标维度
                     String dimension = getDimension(e);
 
-                    // 获取指标配置信息, 将生成sql赋值到formValue及sqlMap中
+                    // 获取指标配置信息
+                    Object formValueObj = e.get(ModuConstant.FORM_VALUE);
 
+                    if (Objects.nonNull(formValueObj)) {
+
+                        if (formValueObj instanceof Map) {
+                            // 如果只有一个指标, 生成该指标对应sql
+                            generateKpiSqlByConf((Map<String, Object>) formValueObj, dimension, sqlMap);
+
+                        } else if (formValueObj instanceof List) {
+                            // 如果有多个指标, 过滤出是指标配置的Map，遍历生成指标对应sql
+                            ((List<Map<String, Object>>) formValueObj).stream()
+                                    .filter(formValue -> StringUtils.isNotBlank((String) formValue.get(ModuConstant.KPI_ID)))
+                                    .forEach(formValue -> generateKpiSqlByConf(formValue, dimension, sqlMap));
+                        }
+                    }
 
                 });
 
         return sqlMap;
+    }
+
+    /**
+     * 通过指标配置信息组装SQL, 赋值到formValue及sqlMap中
+     *
+     * @param formValue 指标配置
+     * @param dimension 指标维度
+     * @param sqlMap    指标SQL及对应指标ID
+     */
+    private void generateKpiSqlByConf(Map<String, Object> formValue,
+                                   String dimension,
+                                   Map<String, String> sqlMap) {
+
+        // 获取指标ID字段
+        String kpiId = (String) formValue.get(ModuConstant.KPI_ID);
+
+        // 通过指标ID获取指标配置信息
+        KpiInfoDO kpiInfo = getKpiInfo(kpiId);
+
+        ScriptSQL scriptSQL = new ScriptSQL();
+        scriptSQL.SELECT();
+        scriptSQL.FROM(kpiInfo.getTabname());
+        scriptSQL.WHERE();
+        scriptSQL.GROUP_BY(dimension);
+        String sql = scriptSQL.toString();
+
+        // 将sql赋值到formValue中
+        formValue.put(ModuConstant.KPI_SQL, sql);
+
+        // 将sql赋值到Map中
+        sqlMap.put(kpiId, sql);
+    }
+
+
+    /**
+     * 通过指标ID获取指标配置信息
+     *
+     * @param kpiId 指标ID
+     */
+    private KpiInfoDO getKpiInfo(String kpiId) {
+
+        // TODO 通过缓存查询指标配置信息
+
+        return new KpiInfoDO();
     }
 
     /**
@@ -57,9 +121,12 @@ public class DefaultStrategy implements ModuConfStrategy {
             if (dimenObj instanceof Map) {
                 // 如果只有一个维度，添加到维度列表中
                 dimensionList.add((String) ((Map) dimenObj).get(ModuConstant.VALUE));
+
             } else if (dimenObj instanceof List) {
+
                 // 如果有多个维度，遍历添加到维度列表中
-                ((List<Map<String, Object>>) dimenObj).forEach(dim -> dimensionList.add((String) dim.get(ModuConstant.VALUE)));
+                ((List<Map<String, Object>>) dimenObj)
+                        .forEach(dim -> dimensionList.add((String) dim.get(ModuConstant.VALUE)));
             }
         }
 
