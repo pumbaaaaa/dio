@@ -5,12 +5,14 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
-@Component("simpleMap_tooltipAboard")
-public class MapStrategy extends DefaultStrategy implements ModuConfStrategy{
+/**
+ * 柱状图-单轴组件
+ */
+@Component("sanYiFeiYong_sanyi_barBgLine")
+public class SingleHistogramStrategy extends DefaultStrategy implements ModuConfStrategy{
 
     @Override
     public Map<String, String> formValueStructAna(List<Map<String, Object>> param) {
-        // TODO 副指标formValue结构为{"_title", "_data"}
         return super.formValueStructAna(param);
     }
 }

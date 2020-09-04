@@ -4,7 +4,6 @@ import com.test.dio.biz.consts.ModuConstant;
 import com.test.dio.biz.domain.KpiInfoDO;
 import com.test.dio.biz.util.CommonUtils;
 import com.test.dio.biz.util.ScriptSQL;
-import com.test.dio.biz.util.SelectExpression;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -19,8 +18,13 @@ import java.util.*;
 @Slf4j
 public class DefaultStrategy implements ModuConfStrategy {
 
+    /**
+     * 对拥有formValue结构解析，生成配置SQL
+     *
+     * @param param
+     * @return
+     */
     @Override
-    @SuppressWarnings("unchecked")
     public Map<String, String> formValueStructAna(List<Map<String, Object>> param) {
 
         // 初始化返回结果，K为kpiId，V为组装sql
@@ -35,25 +39,38 @@ public class DefaultStrategy implements ModuConfStrategy {
                     String dimension = getDimension(e);
 
                     // 获取指标配置信息
-                    Object formValueObj = e.get(ModuConstant.FORM_VALUE);
-
-                    if (Objects.nonNull(formValueObj)) {
-
-                        if (formValueObj instanceof Map) {
-                            // 如果只有一个指标, 生成该指标对应sql
-                            generateKpiSqlByConf((Map<String, Object>) formValueObj, dimension, sqlMap);
-
-                        } else if (formValueObj instanceof List) {
-                            // 如果有多个指标, 过滤出是指标配置的Map，遍历生成指标对应sql
-                            ((List<Map<String, Object>>) formValueObj).stream()
-                                    .filter(formValue -> StringUtils.isNotBlank((String) formValue.get(ModuConstant.KPI_ID)))
-                                    .forEach(formValue -> generateKpiSqlByConf(formValue, dimension, sqlMap));
-                        }
-                    }
+                    getKpiInfo(sqlMap, e, dimension);
 
                 });
 
         return sqlMap;
+    }
+
+    /**
+     * @param sqlMap    K为kpiId，V为组装sql
+     * @param map       解析结构
+     * @param dimension 指标维度
+     */
+    @SuppressWarnings("unchecked")
+    private void getKpiInfo(Map<String, String> sqlMap, Map<String, Object> map, String dimension) {
+
+        // 获取formValue
+        Object formValueObj = map.get(ModuConstant.FORM_VALUE);
+
+        // 判断非空
+        if (Objects.nonNull(formValueObj)) {
+
+            if (formValueObj instanceof Map) {
+                // 如果只有一个指标, 生成该指标对应sql
+                generateKpiSqlByConf((Map<String, Object>) formValueObj, dimension, sqlMap);
+
+            } else if (formValueObj instanceof List) {
+                // 如果有多个指标, 过滤出是指标配置的Map，遍历生成指标对应sql
+                ((List<Map<String, Object>>) formValueObj).stream()
+                        .filter(formValue -> StringUtils.isNotBlank((String) formValue.get(ModuConstant.KPI_ID)))
+                        .forEach(formValue -> generateKpiSqlByConf(formValue, dimension, sqlMap));
+            }
+        }
     }
 
     /**
@@ -64,8 +81,8 @@ public class DefaultStrategy implements ModuConfStrategy {
      * @param sqlMap    指标SQL及对应指标ID
      */
     private void generateKpiSqlByConf(Map<String, Object> formValue,
-                                   String dimension,
-                                   Map<String, String> sqlMap) {
+                                      String dimension,
+                                      Map<String, String> sqlMap) {
 
         // 获取指标ID字段
         String kpiId = (String) formValue.get(ModuConstant.KPI_ID);
@@ -73,6 +90,7 @@ public class DefaultStrategy implements ModuConfStrategy {
         // 通过指标ID获取指标配置信息
         KpiInfoDO kpiInfo = getKpiInfo(kpiId);
 
+        // 拼接sql
         ScriptSQL scriptSQL = new ScriptSQL();
         scriptSQL.SELECT();
         scriptSQL.FROM(kpiInfo.getTabname());
@@ -103,7 +121,7 @@ public class DefaultStrategy implements ModuConfStrategy {
     /**
      * 获取指标维度
      *
-     * @param map
+     * @param map 解析结构
      * @return
      */
     @SuppressWarnings("unchecked")

@@ -1,11 +1,11 @@
-package com.test.dio.biz.util;
+package com.test.dio.biz.expression;
 
 import java.util.Map;
 
 /**
- * Where表达式
+ * Select表达式
  */
-public class WhereExpression implements Expression {
+public class SelectExpression implements Expression {
 
     @Override
     public String generateExpression(Map<String, Object> param) {
