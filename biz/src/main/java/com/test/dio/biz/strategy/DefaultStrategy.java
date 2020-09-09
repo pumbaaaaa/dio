@@ -30,13 +30,13 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         // 初始化返回结果，K为kpiId，V为组装sql
         Map<String, String> sqlMap = new HashMap<>(16);
 
+        // 获取指标维度
+        List<String> dimenLists = getDimension(param);
+
         param.stream()
                 // 过滤出所有包含指标配置信息的Map
                 .filter(e -> e.containsKey(ModuConstant.FORM_VALUE))
                 .forEach(map -> {
-
-                    // 获取指标维度
-                    List<String> dimenLists = getDimension(map);
 
                     // 获取指标配置信息
                     getKpiInfo(sqlMap, map, dimenLists);
@@ -119,34 +119,39 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
     }
 
     /**
-     * 获取指标维度
+     * 获取指标维度、期度
      *
-     * @param map 解析结构
+     * @param param
      * @return
      */
     @SuppressWarnings("unchecked")
-    protected List<String> getDimension(Map<String, Object> map) {
+    protected List<String> getDimension(List<Map<String, Object>> param) {
 
         // 初始化维度集合
         List<String> dimensionList = new ArrayList<>(10);
 
         // 获取key为维度的Map
-        Object dimenObj = map.get(ModuConstant.DIMEN);
+        param.forEach(map -> {
+            Object dimenObj = map.get(ModuConstant.DIMEN);
+            Object periodObj = map.get(ModuConstant.PERIOD);
 
-        // 判断维度不为空
-        if (Objects.nonNull(dimenObj)) {
+            // 校验维度
+            if (Objects.nonNull(dimenObj) && dimenObj instanceof Map) {
 
-            if (dimenObj instanceof Map) {
-                // 如果只有一个维度，添加到维度列表中
+                // 添加到维度列表中
                 dimensionList.add((String) ((Map) dimenObj).get(ModuConstant.VALUE));
 
-            } else if (dimenObj instanceof List) {
-
-                // 如果有多个维度，遍历添加到维度列表中
-                ((List<Map<String, Object>>) dimenObj)
-                        .forEach(dim -> dimensionList.add((String) dim.get(ModuConstant.VALUE)));
             }
-        }
+
+            // 校验期度
+            if (Objects.nonNull(periodObj) && periodObj instanceof Map) {
+
+                // 添加到维度列表中
+                dimensionList.add((String) ((Map) periodObj).get(ModuConstant.VALUE));
+
+            }
+
+        });
 
         return dimensionList;
 

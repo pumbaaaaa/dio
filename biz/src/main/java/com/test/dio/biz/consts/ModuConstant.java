@@ -21,6 +21,11 @@ public interface ModuConstant {
     String DIMEN = "dimen";
 
     /**
+     * 指标期度
+     */
+    String PERIOD = "period";
+
+    /**
      * 指标别名
      */
     String ALIAS_NAME = "aliasName";
