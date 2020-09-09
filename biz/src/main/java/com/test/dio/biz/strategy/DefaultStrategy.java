@@ -16,7 +16,7 @@ import java.util.*;
  */
 @Component("defaultStrategy")
 @Slf4j
-public class DefaultStrategy implements ModuConfStrategy {
+public abstract class DefaultStrategy implements ModuConfStrategy {
 
     /**
      * 对拥有formValue结构解析，生成配置SQL
@@ -25,7 +25,7 @@ public class DefaultStrategy implements ModuConfStrategy {
      * @return
      */
     @Override
-    public Map<String, String> formValueStructAna(List<Map<String, Object>> param) {
+    public final Map<String, String> formValueStructAna(List<Map<String, Object>> param) {
 
         // 初始化返回结果，K为kpiId，V为组装sql
         Map<String, String> sqlMap = new HashMap<>(16);
@@ -33,13 +33,13 @@ public class DefaultStrategy implements ModuConfStrategy {
         param.stream()
                 // 过滤出所有包含指标配置信息的Map
                 .filter(e -> e.containsKey(ModuConstant.FORM_VALUE))
-                .forEach(e -> {
+                .forEach(map -> {
 
                     // 获取指标维度
-                    String dimension = getDimension(e);
+                    List<String> dimenLists = getDimension(map);
 
                     // 获取指标配置信息
-                    getKpiInfo(sqlMap, e, dimension);
+                    getKpiInfo(sqlMap, map, dimenLists);
 
                 });
 
@@ -49,10 +49,10 @@ public class DefaultStrategy implements ModuConfStrategy {
     /**
      * @param sqlMap    K为kpiId，V为组装sql
      * @param map       解析结构
-     * @param dimension 指标维度
+     * @param dimenList 指标维度
      */
     @SuppressWarnings("unchecked")
-    private void getKpiInfo(Map<String, String> sqlMap, Map<String, Object> map, String dimension) {
+    protected void getKpiInfo(Map<String, String> sqlMap, Map<String, Object> map, List<String> dimenList) {
 
         // 获取formValue
         Object formValueObj = map.get(ModuConstant.FORM_VALUE);
@@ -62,13 +62,13 @@ public class DefaultStrategy implements ModuConfStrategy {
 
             if (formValueObj instanceof Map) {
                 // 如果只有一个指标, 生成该指标对应sql
-                generateKpiSqlByConf((Map<String, Object>) formValueObj, dimension, sqlMap);
+                generateKpiSqlByConf((Map<String, Object>) formValueObj, dimenList, sqlMap);
 
             } else if (formValueObj instanceof List) {
                 // 如果有多个指标, 过滤出是指标配置的Map，遍历生成指标对应sql
                 ((List<Map<String, Object>>) formValueObj).stream()
                         .filter(formValue -> StringUtils.isNotBlank((String) formValue.get(ModuConstant.KPI_ID)))
-                        .forEach(formValue -> generateKpiSqlByConf(formValue, dimension, sqlMap));
+                        .forEach(formValue -> generateKpiSqlByConf(formValue, dimenList, sqlMap));
             }
         }
     }
@@ -77,11 +77,11 @@ public class DefaultStrategy implements ModuConfStrategy {
      * 通过指标配置信息组装SQL, 赋值到formValue及sqlMap中
      *
      * @param formValue 指标配置
-     * @param dimension 指标维度
+     * @param dimenList 指标维度
      * @param sqlMap    指标SQL及对应指标ID
      */
     private void generateKpiSqlByConf(Map<String, Object> formValue,
-                                      String dimension,
+                                      List<String> dimenList,
                                       Map<String, String> sqlMap) {
 
         // 获取指标ID字段
@@ -95,7 +95,7 @@ public class DefaultStrategy implements ModuConfStrategy {
         scriptSQL.SELECT();
         scriptSQL.FROM(kpiInfo.getTabname());
         scriptSQL.WHERE();
-        scriptSQL.GROUP_BY(dimension);
+        scriptSQL.GROUP_BY(CommonUtils.joinCode(dimenList));
         String sql = scriptSQL.toString();
 
         // 将sql赋值到formValue中
@@ -125,7 +125,7 @@ public class DefaultStrategy implements ModuConfStrategy {
      * @return
      */
     @SuppressWarnings("unchecked")
-    private String getDimension(Map<String, Object> map) {
+    protected List<String> getDimension(Map<String, Object> map) {
 
         // 初始化维度集合
         List<String> dimensionList = new ArrayList<>(10);
@@ -148,8 +148,7 @@ public class DefaultStrategy implements ModuConfStrategy {
             }
         }
 
-        // 拼接为字符串返回
-        return CommonUtils.joinCode(dimensionList);
+        return dimensionList;
 
     }
 }
