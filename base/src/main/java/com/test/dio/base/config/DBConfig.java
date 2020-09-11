@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 
 @Configuration
-@MapperScan(basePackages = "com.test.dio.**.mapper", annotationClass = Mapper.class)
+@MapperScan(basePackages = {"com.test.dio.**.mapper", "com.test.dio.**.dao"}, annotationClass = Mapper.class)
 @EnableTransactionManagement
 @PropertySource(value = "classpath:datasource-${spring.profiles.active}.properties", ignoreResourceNotFound = true)
 public class DBConfig {

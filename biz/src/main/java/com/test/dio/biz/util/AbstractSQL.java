@@ -95,6 +95,10 @@ public abstract class AbstractSQL<T> {
         return getSelf();
     }
 
+    public T SELECT_IF(String columns, boolean condition) {
+        return condition ? SELECT(columns) : getSelf();
+    }
+
     public T SELECT_DISTINCT(String columns) {
         sql().distinct = true;
         SELECT(columns);
@@ -213,6 +217,11 @@ public abstract class AbstractSQL<T> {
         return condition ? WHERE(conditions) : getSelf();
     }
 
+    public T WHERE_IF_SCRIPT(String conditions) {
+        sql().whereIf.add(conditions);
+        return getSelf();
+    }
+
     public T OR() {
         sql().lastList.add(OR);
         return getSelf();
@@ -234,6 +243,10 @@ public abstract class AbstractSQL<T> {
     public T GROUP_BY(String... columns) {
         sql().groupBy.addAll(Arrays.asList(columns));
         return getSelf();
+    }
+
+    public T GROUP_BY_IF(String conditions, boolean condition) {
+        return condition ? GROUP_BY(conditions) : getSelf();
     }
 
     public T HAVING(String conditions) {
@@ -471,6 +484,7 @@ public abstract class AbstractSQL<T> {
         List<String> leftOuterJoin = new ArrayList<>();
         List<String> rightOuterJoin = new ArrayList<>();
         List<String> where = new ArrayList<>();
+        List<String> whereIf = new ArrayList<>();
         List<String> having = new ArrayList<>();
         List<String> groupBy = new ArrayList<>();
         List<String> orderBy = new ArrayList<>();
@@ -519,6 +533,7 @@ public abstract class AbstractSQL<T> {
             sqlClause(builder, "FROM", tables, "", "", ", ");
             joins(builder);
             sqlClause(builder, "WHERE", where, "(", ")", " AND ");
+            sqlClause(builder, "", whereIf, "", "", "\n");
             sqlClause(builder, "GROUP BY", groupBy, "", "", ", ");
             sqlClause(builder, "HAVING", having, "(", ")", " AND ");
             sqlClause(builder, "ORDER BY", orderBy, "", "", ", ");

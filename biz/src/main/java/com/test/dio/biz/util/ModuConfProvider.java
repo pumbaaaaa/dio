@@ -1,29 +1,37 @@
 package com.test.dio.biz.util;
 
-import com.test.dio.biz.util.ScriptSQL;
 import org.springframework.stereotype.Component;
-
-import java.util.Map;
 
 @Component
 public class ModuConfProvider {
 
-    public String queryData(Map<String, String> param) throws IllegalAccessException, InstantiationException {
+    private static final String IF_SCRIPT = "<if test=\"%s != null and %s != ''\">\nAND %s = #{%s}\n</if>\n";
 
-//        SQL sql = new SQL();
-//
-//        sql.SELECT("stt_time aaa, admdvs bbb");
-//        sql.FROM("biz_opt_cnt_stt_d");
-//        sql.WHERE("admdvs = #{regionCode}");
-//        sql.GROUP_BY("admdvs");
+    public String validScriptSql() {
 
-        ScriptSQL sql = ScriptSQL.class.newInstance();
-        sql.SELECT("stt_time aaa, admdvs bbb");
-        sql.FROM("biz_opt_cnt_stt_d");
-        sql.WHERE("admdvs = #{regionCode}");
-        sql.GROUP_BY("admdvs");
+        String aaa = "";
 
+        SQL sql = new SQL();
+        sql.SELECT("floor a");
+        sql.SELECT(aaa);
+        sql.SELECT("reply_time b");
+        sql.SELECT("content c");
+        sql.FROM("t_floor");
+        sql.WHERE("create_time >= current_date - interval '3 year'");
+        sql.WHERE("create_time < current_date");
+        sql.WHERE_IF_SCRIPT(String.format(IF_SCRIPT, "floor", "floor", "floor", "floor"));
+        sql.LIMIT(100);
+
+        System.out.println(sql.toString());
+        System.out.println(sql.getScriptSql());
 
         return sql.toString();
     }
+
+    public String validSql(SQL sql) {
+
+
+        return sql.getScriptSql();
+    }
+
 }

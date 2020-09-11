@@ -34,6 +34,7 @@ public class ModuConfStrategyFactory {
      */
     public ModuConfStrategy getStrategy(String moduType) {
         ModuConfStrategy moduConfStrategy = confStrategy.get(moduType);
+
         if (Objects.isNull(moduConfStrategy)) {
             return confStrategy.get(DEFAULT_STRATEGY);
         }

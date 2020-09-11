@@ -1,5 +1,7 @@
 package com.test.dio.biz.strategy;
 
+import com.test.dio.biz.domain.KpiSqlInfoDTO;
+
 import java.util.List;
 import java.util.Map;
 
@@ -14,5 +16,5 @@ public interface ModuConfStrategy {
      * @param param
      * @return
      */
-    Map<String, String> formValueStructAna(List<Map<String, Object>> param);
+    List<KpiSqlInfoDTO> formValueStructAna(List<Map<String, Object>> param);
 }
