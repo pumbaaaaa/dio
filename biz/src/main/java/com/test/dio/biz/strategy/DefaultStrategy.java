@@ -2,6 +2,7 @@ package com.test.dio.biz.strategy;
 
 import com.test.dio.base.exception.AppBusinessException;
 import com.test.dio.biz.consts.ModuConstant;
+import com.test.dio.biz.dao.MetaDataDAO;
 import com.test.dio.biz.dao.ModuConfDAO;
 import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.KpiInfoDO;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,9 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
 
     @Autowired
     private ModuConfDAO moduConfDAO;
+
+    @Autowired
+    private MetaDataDAO metaDataDAO;
 
     @Value("#{'${db.date.columns}'.split(',')}")
     private List<String> dateColumns;
@@ -144,7 +149,8 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         SQL scriptSQL = new SQL();
         scriptSQL.SELECT(kpiInfo.getKpiSql());
         scriptSQL.FROM(kpiInfo.getTabname());
-        scriptSQL.WHERE(String.format(ModuConstant.E_EXPRESSION, fitrCond, fitrCondVal));
+        scriptSQL.WHERE_IF(String.format(ModuConstant.E_EXPRESSION, fitrCond, fitrCondVal),
+                StringUtils.isNotBlank(fitrCond) && StringUtils.isNotBlank(fitrCondVal));
 
         // 生成sqlId
         String sqlId = CommonUtils.getUUID();
@@ -255,7 +261,9 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      */
     private String getDateColumn(List<String> dateColumns, String tabName) {
 
-        return null;
+        List<String> columnList = metaDataDAO.selectColumnsByTabName(CommonUtils.joinCode(dateColumns), tabName);
+
+        return CollectionUtils.isEmpty(columnList) ? null : columnList.stream().findAny().get();
     }
 
 
@@ -283,6 +291,11 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      */
     private void checkParam(List<String> linkageParam, KpiSqlInfoDTO kpiSql) {
 
+        List<String> columnList = metaDataDAO.selectColumnsByTabName(CommonUtils.joinCode(linkageParam), kpiSql.getTabName());
+
+        if (columnList.isEmpty()) {
+            throw new AppBusinessException(kpiSql.getKpiName() + "联动参数配置错误");
+        }
     }
 
 }
