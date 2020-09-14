@@ -15,12 +15,24 @@ public class ModuKpiParamDTO {
     @ApiModelProperty("组件名称")
     private String componentName;
 
-    @ApiModelProperty("指标源ID")
-    private String kpiSourceId;
-
     @ApiModelProperty("组件模块配置")
     private List<Map<String, Object>> formConfigData;
 
     @ApiModelProperty("组件模块ID")
     private String moduId;
+
+    @ApiModelProperty("业务域")
+    private ConfDTO bizSbj;
+
+    @ApiModelProperty("指标集")
+    private ConfDTO kpiList;
+
+    @ApiModelProperty("维度")
+    private ConfDTO dimen;
+
+    @ApiModelProperty("期度")
+    private ConfDTO period;
+
+    @ApiModelProperty("组件联动参数")
+    private List<ConfDTO> param;
 }

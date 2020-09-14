@@ -24,15 +24,12 @@ public class ModuConfServiceImpl implements ModuConfService {
     @Override
     public void saveModuConf(ModuKpiParamDTO param) {
 
-        // 获取conf
-        List<Map<String, Object>> conf = param.getFormConfigData();
-
         // 根据不同的组件类型数据结构解析生成sql
-        List<KpiSqlInfoDTO> kpiSqlList = factory.getStrategy(param.getComponentName()).formValueStructAna(conf);
+        List<KpiSqlInfoDTO> kpiSqlList = factory.getStrategy(param.getComponentName()).formValueStructAna(param);
 
         // 将sql插入kpi_sql_info_a表中
 
         // 将conf序列化为json字段保存到modu_list_a表中
-
+        List<Map<String, Object>> conf = param.getFormConfigData();
     }
 }

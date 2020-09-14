@@ -7,6 +7,7 @@ import com.test.dio.biz.dao.ModuConfDAO;
 import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.KpiInfoDO;
 import com.test.dio.biz.domain.KpiSqlInfoDTO;
+import com.test.dio.biz.domain.ModuKpiParamDTO;
 import com.test.dio.biz.strategy.ModuConfStrategy;
 import com.test.dio.biz.util.CommonUtils;
 import com.test.dio.biz.util.SQL;
@@ -46,11 +47,13 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      * @return
      */
     @Override
-    public final List<KpiSqlInfoDTO> formValueStructAna(List<Map<String, Object>> param) {
+    public final List<KpiSqlInfoDTO> formValueStructAna(ModuKpiParamDTO param) {
+
+        List<Map<String, Object>> conf = param.getFormConfigData();
 
         List<KpiSqlInfoDTO> kpiSqlList = new ArrayList<>(10);
 
-        param.forEach(map -> {
+        conf.forEach(map -> {
             // 解析指标配置信息，拼接SELECT指标；FROM表名；WHERE筛选条件
             getKpiInfo(map, kpiSqlList);
 
