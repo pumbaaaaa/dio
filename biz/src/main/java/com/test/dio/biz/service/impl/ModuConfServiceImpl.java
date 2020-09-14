@@ -4,7 +4,7 @@ import com.test.dio.biz.bo.ModuConfBO;
 import com.test.dio.biz.domain.KpiSqlInfoDTO;
 import com.test.dio.biz.domain.ModuKpiParamDTO;
 import com.test.dio.biz.service.ModuConfService;
-import com.test.dio.biz.strategy.ModuConfStrategyFactory;
+import com.test.dio.biz.factory.ModuConfStrategyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

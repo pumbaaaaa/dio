@@ -1,5 +1,6 @@
-package com.test.dio.biz.strategy;
+package com.test.dio.biz.factory;
 
+import com.test.dio.biz.strategy.ModuConfStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
