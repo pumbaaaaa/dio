@@ -16,26 +16,6 @@ public interface ModuConstant {
     String FORM_VALUE = "formValue";
 
     /**
-     * 指标维度
-     */
-    String DIMEN = "dimen";
-
-    /**
-     * 指标期度
-     */
-    String PERIOD = "period";
-
-    /**
-     * 指标参数
-     */
-    String PARAM = "param";
-
-    /**
-     * 指标别名
-     */
-    String ALIAS_NAME = "aliasName";
-
-    /**
      * 指标ID
      */
     String KPI_ID = "kpiId";
@@ -96,6 +76,11 @@ public interface ModuConstant {
     String LT_LABEL = "<";
 
     /**
+     * 别名
+     */
+    String AS = "AS";
+
+    /**
      * 昨天
      */
     String DAY = "DAY";
@@ -124,4 +109,22 @@ public interface ModuConstant {
      * 当前年
      */
     String CRTYEAR = "CRTYEAR";
+
+    /**
+     * 月份格式化
+     */
+    String MYSQL_YYYY_MM = "%Y-%m";
+    String PG_YYYY_MM = "yyyy-MM";
+
+    /**
+     * 日期格式化
+     */
+    String MYSQL_YYYY_MM_DD = "%Y-%m-%d";
+    String PG_YYYY_MM_DD = "yyyy-MM-dd";
+
+    /**
+     * 分钟格式化
+     */
+    String MYSQL_YYYY_MM_DD_HH_MM_00 = "%Y-%m-%d %";
+    String PG_YYYY_MM_DD_HH_MM_00 = "yyyy-MM-dd hh:mm:00";
 }

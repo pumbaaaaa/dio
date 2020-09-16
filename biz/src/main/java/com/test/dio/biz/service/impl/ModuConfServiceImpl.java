@@ -3,13 +3,12 @@ package com.test.dio.biz.service.impl;
 import com.test.dio.biz.bo.ModuConfBO;
 import com.test.dio.biz.domain.KpiSqlInfoDTO;
 import com.test.dio.biz.domain.ModuKpiParamDTO;
-import com.test.dio.biz.service.ModuConfService;
 import com.test.dio.biz.factory.ModuConfStrategyFactory;
+import com.test.dio.biz.service.ModuConfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ModuConfServiceImpl implements ModuConfService {
@@ -28,8 +27,9 @@ public class ModuConfServiceImpl implements ModuConfService {
         List<KpiSqlInfoDTO> kpiSqlList = factory.getStrategy(param.getComponentName()).formValueStructAna(param);
 
         // 将sql插入kpi_sql_info_a表中
+        moduConfBO.saveKpiSql(kpiSqlList);
 
-        // 将conf序列化为json字段保存到modu_list_a表中
-        List<Map<String, Object>> conf = param.getFormConfigData();
+        // 将param序列化后保存到modu_list_a表中
+        moduConfBO.saveModuConf(param);
     }
 }

@@ -1,7 +1,6 @@
-package com.test.dio.biz.strategy.impl;
+package com.test.dio.biz.strategy.modu.impl;
 
-import com.test.dio.biz.strategy.ModuConfStrategy;
-import com.test.dio.biz.strategy.impl.DefaultStrategy;
+import com.test.dio.biz.strategy.modu.ModuConfStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

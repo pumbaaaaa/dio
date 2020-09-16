@@ -1,5 +1,8 @@
 package com.test.dio.biz.bo;
 
+import com.test.dio.biz.domain.KpiSqlInfoDTO;
+import com.test.dio.biz.domain.ModuKpiParamDTO;
+
 import java.util.List;
 import java.util.Map;
 
@@ -8,14 +11,14 @@ public interface ModuConfBO {
     /**
      * 将sql插入kpi_sql_info_a表中
      *
-     * @param sqlMap
+     * @param kpiSqlList
      */
-    void saveKpiSql(Map<String, String> sqlMap);
+    void saveKpiSql(List<KpiSqlInfoDTO> kpiSqlList);
 
     /**
-     * 将conf序列化为json字段保存到modu_list_a表中
+     * 将param序列化后保存到modu_list_a表中
      *
-     * @param conf
+     * @param param
      */
-    void saveModuConf(List<Map<String, Object>> conf);
+    void saveModuConf(ModuKpiParamDTO param);
 }

@@ -10,9 +10,10 @@ public class ModuConfProvider {
     public String validScriptSql() {
 
         String aaa = "";
+        String bbb = null;
 
         SQL sql = new SQL();
-        sql.SELECT("floor a");
+        sql.SELECT(bbb);
         sql.SELECT(aaa);
         sql.SELECT("reply_time b");
         sql.SELECT("content c");
@@ -30,8 +31,7 @@ public class ModuConfProvider {
 
     public String validSql(SQL sql) {
 
-
-        return sql.getScriptSql();
+        return sql.toString();
     }
 
 }

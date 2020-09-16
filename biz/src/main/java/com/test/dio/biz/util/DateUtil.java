@@ -4,7 +4,17 @@ import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.DateType;
 import org.joda.time.LocalDate;
 
+import java.util.Date;
+
 public class DateUtil {
+
+    public static String genStrWithPattern(Date date, String pattern) {
+        return LocalDate.fromDateFields(date).toString(pattern);
+    }
+
+    public static String genSqlWithPattern(Date date, String pattern) {
+        return "'" + genStrWithPattern(date, pattern) + "'";
+    }
 
     public static LocalDate getFirstDayOfYear() {
         return LocalDate.now().dayOfYear().withMinimumValue();

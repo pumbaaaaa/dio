@@ -3,7 +3,10 @@ package com.test.dio.biz.consts;
 public interface Constant {
 
     // Pattern
+    String YYYY_MM = "yyyy-MM";
+    String YYYY_MM_DD = "yyyy-MM-dd";
     String YYYY_MM_DD_HH_MM = "yyyy-MM-dd HH:mm";
+    String YYYY_MM_DD_HH_MM_00 = "yyyy-MM-dd HH:mm:00";
 
     // URL
     String MAELSTROM = "maelstrom";

@@ -1,10 +1,9 @@
-package com.test.dio.biz.strategy;
+package com.test.dio.biz.strategy.modu;
 
 import com.test.dio.biz.domain.KpiSqlInfoDTO;
 import com.test.dio.biz.domain.ModuKpiParamDTO;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 组件配置策略

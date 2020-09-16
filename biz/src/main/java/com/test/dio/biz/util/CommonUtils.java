@@ -1,6 +1,7 @@
 package com.test.dio.biz.util;
 
 
+import com.test.dio.biz.consts.Constant;
 import com.test.dio.biz.consts.ModuConstant;
 import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.DateType;
@@ -71,7 +72,7 @@ public class CommonUtils {
 
 
     /**
-     * 根据期度类型返回开始结束时间
+     * 根据期度类型返回开始结束时间，以及时间类型模式
      *
      * @param periodType 期度类型
      * @return

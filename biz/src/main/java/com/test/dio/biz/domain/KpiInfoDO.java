@@ -28,4 +28,9 @@ public class KpiInfoDO {
      */
     private String tabname;
 
+    /**
+     * 指标对应数据库
+     */
+    private String kpiDbId;
+
 }

@@ -36,4 +36,9 @@ public class KpiSqlInfoDTO {
      */
     private String tabName;
 
+    /**
+     * 数据库类型
+     */
+    private String kpiDbId;
+
 }

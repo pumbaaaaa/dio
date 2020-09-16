@@ -1,27 +1,31 @@
-package com.test.dio.biz.strategy.impl;
+package com.test.dio.biz.strategy.modu.impl;
 
 import com.test.dio.base.exception.AppBusinessException;
+import com.test.dio.biz.consts.Constant;
 import com.test.dio.biz.consts.ModuConstant;
+import com.test.dio.biz.dao.KpiConfDAO;
 import com.test.dio.biz.dao.MetaDataDAO;
 import com.test.dio.biz.dao.ModuConfDAO;
-import com.test.dio.biz.domain.DateParamDO;
-import com.test.dio.biz.domain.KpiInfoDO;
-import com.test.dio.biz.domain.KpiSqlInfoDTO;
-import com.test.dio.biz.domain.ModuKpiParamDTO;
-import com.test.dio.biz.strategy.ModuConfStrategy;
+import com.test.dio.biz.domain.*;
+import com.test.dio.biz.factory.SqlStrategyFactory;
+import com.test.dio.biz.strategy.modu.ModuConfStrategy;
 import com.test.dio.biz.util.CommonUtils;
+import com.test.dio.biz.util.DateUtil;
 import com.test.dio.biz.util.SQL;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 /**
@@ -30,6 +34,12 @@ import java.util.Objects;
 @Component("defaultStrategy")
 @Slf4j
 public abstract class DefaultStrategy implements ModuConfStrategy {
+
+    @Autowired
+    private SqlStrategyFactory sqlStrategyFactory;
+
+    @Autowired
+    private KpiConfDAO kpiConfDAO;
 
     @Autowired
     private ModuConfDAO moduConfDAO;
@@ -49,22 +59,23 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
     @Override
     public final List<KpiSqlInfoDTO> formValueStructAna(ModuKpiParamDTO param) {
 
-        List<Map<String, Object>> conf = param.getFormConfigData();
-
         List<KpiSqlInfoDTO> kpiSqlList = new ArrayList<>(10);
+
+        // 获取指标维度
+        String dimension = param.getDimen().getValue();
+
+        // 获取指标期度开始结束时间
+        DateParamDO dateParam = getPeriod(param.getPeriod());
+
+        // 获取组件联动参数
+        List<String> linkageParam = param.getParam().stream().map(ConfDTO::getValue).collect(Collectors.toList());
+
+        // 获取config结构
+        List<Map<String, Object>> conf = param.getFormConfigData();
 
         conf.forEach(map -> {
             // 解析指标配置信息，拼接SELECT指标；FROM表名；WHERE筛选条件
             getKpiInfo(map, kpiSqlList);
-
-            // 获取指标维度
-            String dimension = getDimension(map);
-
-            // 获取指标期度开始结束时间
-            DateParamDO dateParam = getPeriod(map);
-
-            // 获取组件联动参数
-            List<String> linkageParam = getLinkageParam(map);
 
             // 遍历所有指标SQL
             kpiSqlList.forEach(kpiSql -> {
@@ -72,25 +83,13 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
                 // 获取SQL类
                 SQL scriptSQL = kpiSql.getScriptSQL();
 
-                // 根据表名查询出时间字段
-                String dateColumn = getDateColumn(dateColumns, kpiSql.getTabName());
-
-                // 拼接SELECT表达式：业务维度，时间维度
-                scriptSQL.SELECT(dimension);
-                scriptSQL.SELECT(dateColumn);
-
-                // 拼接WHERE表达式：时间范围
-                scriptSQL.WHERE(String.format(ModuConstant.GE_EXPRESSION, dateColumn, dateParam.getStartDate().toString()));
-                scriptSQL.WHERE(String.format(ModuConstant.LT_EXPRESSION, dateColumn, dateParam.getEndDate().toString()));
-
-                // 拼接GROUP BY表达式：业务维度，时间维度
-                scriptSQL.GROUP_BY(dimension);
-                scriptSQL.GROUP_BY(dateColumn);
+                // 根据业务维度，时间维度，时间范围组装SQL
+                buildScriptSql(dimension, dateParam, kpiSql, scriptSQL);
 
                 // 校验SQL是否可以执行
-                checkSql(scriptSQL);
+                checkSql(kpiSql);
 
-                //校验组件联动参数是否存在指标表中
+                //校验组件联动参数是否存在指标表中, 如果存在，拼接动态参数
                 checkParam(linkageParam, kpiSql);
 
             });
@@ -140,7 +139,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         // 获取指标ID
         String kpiId = String.valueOf(formValue.get(ModuConstant.KPI_ID));
         // 获取指标名称
-        String kpiName = String.valueOf(formValue.get(ModuConstant.ALIAS_NAME));
+        String kpiName = String.valueOf(formValue.get(ModuConstant.VALUE));
         // 获取筛选条件字段
         String fitrCond = String.valueOf(formValue.get(ModuConstant.FITR_COND));
         // 获取筛选条件字段值
@@ -166,6 +165,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         kpiSqlInfo.setKpiName(kpiName);
         kpiSqlInfo.setSqlId(sqlId);
         kpiSqlInfo.setTabName(kpiInfo.getTabname());
+        kpiSqlInfo.setKpiDbId(kpiInfo.getKpiDbId());
 
         // 添加到返回集合中
         kpiSqlList.add(kpiSqlInfo);
@@ -183,77 +183,51 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
     private KpiInfoDO getKpiInfo(String kpiId) {
 
         // TODO 通过缓存查询指标配置信息
-
-        return new KpiInfoDO();
+        return kpiConfDAO.selectKpiInfoById(kpiId);
     }
 
     /**
-     * 获取指标维度
+     * 获取指标期度，根据维度类型获取开始结束时间，默认为昨日
      *
      * @param param 传参结构体
-     * @return
      */
-    @SuppressWarnings("unchecked")
-    private String getDimension(Map<String, Object> param) {
+    private DateParamDO getPeriod(ConfDTO param) {
 
-        String dimension = null;
+        String period = param.getValue();
 
-        // 获取key为维度的Map
-        Object dimenObj = param.get(ModuConstant.DIMEN);
-
-        // 校验维度
-        if (Objects.nonNull(dimenObj) && dimenObj instanceof Map) {
-
-            dimension = String.valueOf(((Map) dimenObj).get(ModuConstant.VALUE));
-
-        }
-        return dimension;
+        // 根据维度类型获取开始结束时间，默认为昨日
+        DateParamDO result = CommonUtils.getDateByPeriod(period);
+        result.setPeriodType(period);
+        return result;
     }
 
     /**
-     * 获取指标期度
+     * 组装SQL
      *
-     * @param param 传参结构体
+     * @param dimension 维度
+     * @param dateParam 时间筛选条件
+     * @param kpiSql    指标SQL信息
+     * @param scriptSQL SQL类
      */
-    @SuppressWarnings("unchecked")
-    private DateParamDO getPeriod(Map<String, Object> param) {
+    private void buildScriptSql(String dimension, DateParamDO dateParam, KpiSqlInfoDTO kpiSql, SQL scriptSQL) {
+        // 根据表名查询出时间字段
+        String dateColumn = getDateColumn(dateColumns, kpiSql.getTabName());
+        String dateFormat = sqlStrategyFactory.getStrategy(kpiSql.getKpiDbId())
+                .getDateFormat(dateColumn, dateParam.getPeriodType());
 
-        DateParamDO dateParam = new DateParamDO();
+        // 拼接SELECT表达式：业务维度，时间维度
+        scriptSQL.SELECT(dimension);
+        scriptSQL.SELECT(dateFormat + ModuConstant.AS + dateColumn);
 
-        // 获取key为维度的Map
-        Object periodObj = param.get(ModuConstant.PERIOD);
+        // 拼接WHERE表达式：时间范围
+        String startDate = DateUtil.genSqlWithPattern(dateParam.getStartDate(), Constant.YYYY_MM_DD);
+        String endDate = DateUtil.genSqlWithPattern(dateParam.getEndDate(), Constant.YYYY_MM_DD);
+        scriptSQL.WHERE(String.format(ModuConstant.GE_EXPRESSION, dateColumn, startDate));
+        scriptSQL.WHERE(String.format(ModuConstant.LT_EXPRESSION, dateColumn, endDate));
 
-        if (Objects.nonNull(periodObj) && periodObj instanceof Map) {
-
-            String period = String.valueOf(((Map) periodObj).get(ModuConstant.VALUE));
-
-            // 根据维度类型获取开始结束时间，默认为昨日
-            dateParam = CommonUtils.getDateByPeriod(period);
-        }
-
-        return dateParam;
-
-    }
-
-    /**
-     * 获取指标联动参数
-     *
-     * @param param 传参结构体
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    private List<String> getLinkageParam(Map<String, Object> param) {
-
-        List<String> paramList = new ArrayList<>(10);
-
-        // 获取key为联动参数的Map
-        Object paramObj = param.get(ModuConstant.PARAM);
-
-        if (Objects.nonNull(paramObj) && paramObj instanceof List) {
-            ((List<Map<String, Object>>) paramObj).forEach(e -> paramList.add(String.valueOf(e.get(ModuConstant.VALUE))));
-        }
-
-        return paramList;
+        // 拼接GROUP BY表达式：业务维度，时间维度
+        scriptSQL.GROUP_BY(dimension);
+        scriptSQL.GROUP_BY(dateFormat);
     }
 
     /**
@@ -270,17 +244,16 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         return CollectionUtils.isEmpty(columnList) ? null : columnList.stream().findAny().get();
     }
 
-
     /**
      * 校验SQL是否可执行
      * 如果SQL无法执行，抛出对应指标配置错误异常
      *
-     * @param scriptSQL 执行SQL
+     * @param kpiSql 指标SQL类
      */
-    private void checkSql(SQL scriptSQL) {
+    private void checkSql(KpiSqlInfoDTO kpiSql) {
         try {
-            moduConfDAO.validProviderSql(scriptSQL);
-        } catch (Exception e) {
+            moduConfDAO.validProviderSql(kpiSql.getScriptSQL());
+        } catch (SQLException e) {
             throw new AppBusinessException(e.getMessage());
         }
     }
@@ -289,6 +262,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
     /**
      * 校验表中是否有该参数字段
      * 如果没有，抛出对应指标表中无该参数异常
+     * 如果有，拼接参数动态SQL
      *
      * @param linkageParam 组件联动参数集
      * @param kpiSql       指标SQL类
@@ -297,9 +271,22 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
 
         List<String> columnList = metaDataDAO.selectColumnsByTabName(CommonUtils.joinCode(linkageParam), kpiSql.getTabName());
 
-        if (columnList.isEmpty()) {
-            throw new AppBusinessException(kpiSql.getKpiName() + "联动参数配置错误");
-        }
+        SQL scriptSQL = kpiSql.getScriptSQL();
+
+
+        linkageParam.forEach(e -> {
+            if (!columnList.contains(e)) {
+
+                // 如果数据库表中没有用户配置的参数字段，抛出异常
+                throw new AppBusinessException(kpiSql.getKpiName() + "联动参数配置错误");
+            } else {
+
+                // 如果组件联动参数字段没有问题，拼接动态SQL
+                scriptSQL.WHERE_IF_SCRIPT(String.format(ModuConstant.IF_SCRIPT, e, e, e, e));
+            }
+        });
+
+
     }
 
 }
