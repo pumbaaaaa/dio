@@ -2,7 +2,7 @@ package com.test.dio.biz.util;
 
 import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.DateType;
-import org.joda.time.LocalDate;
+import org.joda.time.*;
 
 import java.util.Date;
 
@@ -10,10 +10,6 @@ public class DateUtil {
 
     public static String genStrWithPattern(Date date, String pattern) {
         return LocalDate.fromDateFields(date).toString(pattern);
-    }
-
-    public static String genSqlWithPattern(Date date, String pattern) {
-        return "'" + genStrWithPattern(date, pattern) + "'";
     }
 
     public static LocalDate getFirstDayOfYear() {
@@ -58,5 +54,26 @@ public class DateUtil {
         result.setEndDate(endDate.toDate());
 
         return result;
+    }
+
+    public static String getSpanWithMon(Date startDate, Date endDate) {
+        LocalDate start = LocalDate.fromDateFields(startDate);
+        LocalDate end = LocalDate.fromDateFields(endDate);
+
+        return String.valueOf(Months.monthsBetween(start, end).getMonths());
+    }
+
+    public static String getSpanWithDay(Date startDate, Date endDate) {
+        LocalDate start = LocalDate.fromDateFields(startDate);
+        LocalDate end = LocalDate.fromDateFields(endDate);
+
+        return String.valueOf(Days.daysBetween(start, end).getDays());
+    }
+
+    public static String getSpanWithHour(Date startDate, Date endDate) {
+        LocalDateTime start = LocalDateTime.fromDateFields(startDate);
+        LocalDateTime end = LocalDateTime.fromDateFields(endDate);
+
+        return String.valueOf(Hours.hoursBetween(start, end).getHours());
     }
 }

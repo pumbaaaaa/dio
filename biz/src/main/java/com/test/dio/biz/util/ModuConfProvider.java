@@ -9,22 +9,16 @@ public class ModuConfProvider {
 
     public String validScriptSql() {
 
-        String aaa = "";
-        String bbb = null;
-
         SQL sql = new SQL();
-        sql.SELECT(bbb);
-        sql.SELECT(aaa);
-        sql.SELECT("reply_time b");
-        sql.SELECT("content c");
-        sql.FROM("t_floor");
-        sql.WHERE("create_time >= current_date - interval '3 year'");
-        sql.WHERE("create_time < current_date");
-        sql.WHERE_IF_SCRIPT(String.format(IF_SCRIPT, "floor", "floor", "floor", "floor"));
-        sql.LIMIT(100);
+        sql.SELECT("to_char(b.stt_date, 'yyyy-MM-dd') stt_date");
+        sql.SELECT("count(a.*)");
+        sql.FROM("t_floor a ");
+        sql.RIGHT_OUTER_JOIN("(select generate_series(current_date, (current_date + interval '7 day'), '1 day')::date stt_date) b on date(a.create_time) = b.stt_date");
+        sql.WHERE("b.stt_date >= current_date");
+        sql.WHERE("b.stt_date < current_date + interval '7 day'");
+        sql.GROUP_BY("to_char(b.stt_date, 'yyyy-MM-dd')");
+        sql.ORDER_BY("to_char(b.stt_date, 'yyyy-MM-dd')");
 
-        System.out.println(sql.toString());
-        System.out.println(sql.getScriptSql());
 
         return sql.toString();
     }

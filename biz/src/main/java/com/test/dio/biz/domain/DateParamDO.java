@@ -21,7 +21,22 @@ public class DateParamDO {
     private Date endDate;
 
     /**
-     * 时间类型模式
+     * 期度类型
      */
     private String periodType;
+
+    /**
+     * 时间模式
+     */
+    private String pattern;
+
+    /**
+     * 时间类型
+     */
+    private String timeType;
+
+    /**
+     * 时间跨度
+     */
+    private String span;
 }

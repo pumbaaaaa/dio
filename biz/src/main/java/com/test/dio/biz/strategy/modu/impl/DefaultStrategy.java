@@ -3,18 +3,17 @@ package com.test.dio.biz.strategy.modu.impl;
 import com.test.dio.base.exception.AppBusinessException;
 import com.test.dio.biz.consts.Constant;
 import com.test.dio.biz.consts.ModuConstant;
+import com.test.dio.biz.consts.SqlConstant;
 import com.test.dio.biz.dao.KpiConfDAO;
 import com.test.dio.biz.dao.MetaDataDAO;
 import com.test.dio.biz.dao.ModuConfDAO;
 import com.test.dio.biz.domain.*;
-import com.test.dio.biz.factory.SqlStrategyFactory;
 import com.test.dio.biz.strategy.modu.ModuConfStrategy;
 import com.test.dio.biz.util.CommonUtils;
 import com.test.dio.biz.util.DateUtil;
 import com.test.dio.biz.util.SQL;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -34,9 +33,6 @@ import java.util.stream.Collectors;
 @Component("defaultStrategy")
 @Slf4j
 public abstract class DefaultStrategy implements ModuConfStrategy {
-
-    @Autowired
-    private SqlStrategyFactory sqlStrategyFactory;
 
     @Autowired
     private KpiConfDAO kpiConfDAO;
@@ -100,10 +96,12 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
 
 
     /**
+     * 解析指标配置信息，拼接SELECT指标；FROM表名；WHERE筛选条件
+     *
      * @param param 传参结构体
      */
     @SuppressWarnings("unchecked")
-    protected void getKpiInfo(Map<String, Object> param, List<KpiSqlInfoDTO> kpiSqlList) {
+    private void getKpiInfo(Map<String, Object> param, List<KpiSqlInfoDTO> kpiSqlList) {
 
         // 获取formValue
         Object formValueObj = param.get(ModuConstant.FORM_VALUE);
@@ -151,8 +149,9 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
         // 拼接sql
         SQL scriptSQL = new SQL();
         scriptSQL.SELECT(kpiInfo.getKpiSql());
-        scriptSQL.FROM(kpiInfo.getTabname());
-        scriptSQL.WHERE_IF(String.format(ModuConstant.E_EXPRESSION, fitrCond, fitrCondVal),
+        // 指标表起别名，为补充缺失日期组件准备
+        scriptSQL.FROM(kpiInfo.getTabname() + SqlConstant.AS + SqlConstant.TABLE_LEFT);
+        scriptSQL.WHERE_IF(String.format(SqlConstant.E_EXPRESSION, fitrCond, fitrCondVal),
                 StringUtils.isNotBlank(fitrCond) && StringUtils.isNotBlank(fitrCondVal));
 
         // 生成sqlId
@@ -182,7 +181,6 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      */
     private KpiInfoDO getKpiInfo(String kpiId) {
 
-        // TODO 通过缓存查询指标配置信息
         return kpiConfDAO.selectKpiInfoById(kpiId);
     }
 
@@ -208,26 +206,29 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      * @param dateParam 时间筛选条件
      * @param kpiSql    指标SQL信息
      * @param scriptSQL SQL类
+     * @return 时间字段
      */
-    private void buildScriptSql(String dimension, DateParamDO dateParam, KpiSqlInfoDTO kpiSql, SQL scriptSQL) {
+    protected String buildScriptSql(String dimension, DateParamDO dateParam, KpiSqlInfoDTO kpiSql, SQL scriptSQL) {
         // 根据表名查询出时间字段
         String dateColumn = getDateColumn(dateColumns, kpiSql.getTabName());
-        String dateFormat = sqlStrategyFactory.getStrategy(kpiSql.getKpiDbId())
-                .getDateFormat(dateColumn, dateParam.getPeriodType());
 
-        // 拼接SELECT表达式：业务维度，时间维度
-        scriptSQL.SELECT(dimension);
-        scriptSQL.SELECT(dateFormat + ModuConstant.AS + dateColumn);
+        // 如果维度配置为不为时间
+        if (!ModuConstant.DIMENSION_TIME.equalsIgnoreCase(dimension)) {
 
-        // 拼接WHERE表达式：时间范围
-        String startDate = DateUtil.genSqlWithPattern(dateParam.getStartDate(), Constant.YYYY_MM_DD);
-        String endDate = DateUtil.genSqlWithPattern(dateParam.getEndDate(), Constant.YYYY_MM_DD);
-        scriptSQL.WHERE(String.format(ModuConstant.GE_EXPRESSION, dateColumn, startDate));
-        scriptSQL.WHERE(String.format(ModuConstant.LT_EXPRESSION, dateColumn, endDate));
+            // 拼接SELECT表达式：业务维度（如果组件没有维度配置，不设置）
+            scriptSQL.SELECT_IF(dimension, StringUtils.isNotBlank(dimension));
 
-        // 拼接GROUP BY表达式：业务维度，时间维度
-        scriptSQL.GROUP_BY(dimension);
-        scriptSQL.GROUP_BY(dateFormat);
+            // 拼接WHERE表达式：时间范围
+            String startDate = DateUtil.genStrWithPattern(dateParam.getStartDate(), Constant.YYYY_MM_DD);
+            String endDate = DateUtil.genStrWithPattern(dateParam.getEndDate(), Constant.YYYY_MM_DD);
+            scriptSQL.WHERE(String.format(SqlConstant.GE_EXPRESSION, dateColumn, startDate));
+            scriptSQL.WHERE(String.format(SqlConstant.LT_EXPRESSION, dateColumn, endDate));
+
+            // 拼接GROUP BY表达式：业务维度
+            scriptSQL.GROUP_BY_IF(dimension, StringUtils.isNotBlank(dimension));
+        }
+
+        return dateColumn;
     }
 
     /**
@@ -282,7 +283,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
             } else {
 
                 // 如果组件联动参数字段没有问题，拼接动态SQL
-                scriptSQL.WHERE_IF_SCRIPT(String.format(ModuConstant.IF_SCRIPT, e, e, e, e));
+                scriptSQL.WHERE_IF_SCRIPT(String.format(SqlConstant.IF_SCRIPT, e, e, e, e));
             }
         });
 
