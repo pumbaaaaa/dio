@@ -1,12 +1,11 @@
 package com.test.dio.biz.strategy.modu.impl;
 
 import com.test.dio.base.exception.AppBusinessException;
-import com.test.dio.biz.consts.Constant;
 import com.test.dio.biz.consts.ModuConstant;
 import com.test.dio.biz.consts.SqlConstant;
+import com.test.dio.biz.dao.ExecutionSqlDAO;
 import com.test.dio.biz.dao.KpiConfDAO;
 import com.test.dio.biz.dao.MetaDataDAO;
-import com.test.dio.biz.dao.ModuConfDAO;
 import com.test.dio.biz.domain.*;
 import com.test.dio.biz.strategy.modu.ModuConfStrategy;
 import com.test.dio.biz.util.CommonUtils;
@@ -32,13 +31,13 @@ import java.util.stream.Collectors;
  */
 @Component("defaultStrategy")
 @Slf4j
-public abstract class DefaultStrategy implements ModuConfStrategy {
+public class DefaultStrategy implements ModuConfStrategy {
 
     @Autowired
     private KpiConfDAO kpiConfDAO;
 
     @Autowired
-    private ModuConfDAO moduConfDAO;
+    private ExecutionSqlDAO executionSqlDAO;
 
     @Autowired
     private MetaDataDAO metaDataDAO;
@@ -117,7 +116,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
                 // 如果有多个指标
                 ((List<Map<String, Object>>) formValueObj).stream()
                         // 通过formValue中是否有kpiId来过滤出是指标配置的Map
-                        .filter(formValue -> StringUtils.isNotBlank(String.valueOf(formValue.get(ModuConstant.KPI_ID))))
+                        .filter(formValue -> null != formValue.get(ModuConstant.KPI_ID))
                         // 遍历生成指标对应sql
                         .forEach(formValue -> generateKpiSqlByConf(formValue, kpiSqlList));
             }
@@ -148,7 +147,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
 
         // 拼接sql
         SQL scriptSQL = new SQL();
-        scriptSQL.SELECT(kpiInfo.getKpiSql());
+        scriptSQL.SELECT(kpiInfo.getKpiSql() + kpiName);
         // 指标表起别名，为补充缺失日期组件准备
         scriptSQL.FROM(kpiInfo.getTabname() + SqlConstant.AS + SqlConstant.TABLE_LEFT);
         scriptSQL.WHERE_IF(String.format(SqlConstant.E_EXPRESSION, fitrCond, fitrCondVal),
@@ -219,16 +218,27 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
             scriptSQL.SELECT_IF(dimension, StringUtils.isNotBlank(dimension));
 
             // 拼接WHERE表达式：时间范围
-            String startDate = DateUtil.genStrWithPattern(dateParam.getStartDate(), Constant.YYYY_MM_DD);
-            String endDate = DateUtil.genStrWithPattern(dateParam.getEndDate(), Constant.YYYY_MM_DD);
-            scriptSQL.WHERE(String.format(SqlConstant.GE_EXPRESSION, dateColumn, startDate));
-            scriptSQL.WHERE(String.format(SqlConstant.LT_EXPRESSION, dateColumn, endDate));
+            assemblyWhereExpression(dateParam, scriptSQL, dateColumn);
 
             // 拼接GROUP BY表达式：业务维度
             scriptSQL.GROUP_BY_IF(dimension, StringUtils.isNotBlank(dimension));
         }
 
         return dateColumn;
+    }
+
+    /**
+     * 拼接WHERE表达式：时间范围
+     *
+     * @param dateParam  时间参数
+     * @param scriptSQL  SQL
+     * @param dateColumn 时间字段
+     */
+    void assemblyWhereExpression(DateParamDO dateParam, SQL scriptSQL, String dateColumn) {
+        String startDate = DateUtil.genStrWithPattern(dateParam.getStartDate(), SqlConstant.YYYY_MM_DD);
+        String endDate = DateUtil.genStrWithPattern(dateParam.getEndDate(), SqlConstant.YYYY_MM_DD);
+        scriptSQL.WHERE(String.format(SqlConstant.GE_EXPRESSION, dateColumn, startDate));
+        scriptSQL.WHERE(String.format(SqlConstant.LT_EXPRESSION, dateColumn, endDate));
     }
 
     /**
@@ -253,7 +263,7 @@ public abstract class DefaultStrategy implements ModuConfStrategy {
      */
     private void checkSql(KpiSqlInfoDTO kpiSql) {
         try {
-            moduConfDAO.validProviderSql(kpiSql.getScriptSQL());
+            executionSqlDAO.checkSql(kpiSql.getScriptSQL());
         } catch (SQLException e) {
             throw new AppBusinessException(e.getMessage());
         }

@@ -2,6 +2,9 @@ package com.test.dio.biz.strategy.sql;
 
 import com.test.dio.biz.domain.DateParamDO;
 
+/**
+ * SQL策略
+ */
 public interface SqlStrategy {
 
     /**

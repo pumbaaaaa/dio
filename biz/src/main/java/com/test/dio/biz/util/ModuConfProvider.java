@@ -23,7 +23,7 @@ public class ModuConfProvider {
         return sql.toString();
     }
 
-    public String validSql(SQL sql) {
+    public String checkSql(SQL sql) {
 
         return sql.toString();
     }

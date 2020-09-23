@@ -11,8 +11,8 @@ import org.springframework.stereotype.Repository;
 public interface KpiConfDAO {
 
 
-    @Select("SELECT kpi_id, kpi_no, kpi_sql, tabname, kpi_db_id" +
-            "FROM kpi_info_a" +
-            "WHERE kpi_id = #{kpiId}")
+    @Select(" SELECT kpi_id, kpi_no, kpi_sql, tabname, kpi_db_id " +
+            " FROM kpi_info_a " +
+            " WHERE kpi_id = #{kpiId} ")
     KpiInfoDO selectKpiInfoById(@Param("kpiId") String kpiId);
 }

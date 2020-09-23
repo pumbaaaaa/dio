@@ -1,14 +1,11 @@
 package com.test.dio.biz.strategy.modu.impl;
 
-import com.test.dio.biz.consts.Constant;
-import com.test.dio.biz.consts.ModuConstant;
 import com.test.dio.biz.consts.SqlConstant;
 import com.test.dio.biz.domain.DateParamDO;
 import com.test.dio.biz.domain.KpiSqlInfoDTO;
 import com.test.dio.biz.factory.SqlStrategyFactory;
 import com.test.dio.biz.strategy.modu.ModuConfStrategy;
 import com.test.dio.biz.strategy.sql.SqlStrategy;
-import com.test.dio.biz.util.DateUtil;
 import com.test.dio.biz.util.SQL;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +43,7 @@ public class DoubleHistogramStrategy extends DefaultStrategy implements ModuConf
         scriptSQL.RIGHT_OUTER_JOIN(rightJoin);
 
         // 生成开始时间结束时间SQL，拼接WHERE条件
-        String startDate = DateUtil.genStrWithPattern(dateParam.getStartDate(), SqlConstant.YYYY_MM_DD);
-        String endDate = DateUtil.genStrWithPattern(dateParam.getEndDate(), SqlConstant.YYYY_MM_DD);
-        scriptSQL.WHERE(String.format(SqlConstant.GE_EXPRESSION, splmDateColumn, startDate));
-        scriptSQL.WHERE(String.format(SqlConstant.LT_EXPRESSION, splmDateColumn, endDate));
+        assemblyWhereExpression(dateParam, scriptSQL, dateColumn);
 
         // 拼接GROUP BY表达式：时间维度
         scriptSQL.GROUP_BY(dateFormat);
